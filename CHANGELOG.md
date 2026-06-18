@@ -7,6 +7,39 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-18
+
+**Ajustes del residente** (cierra M2): "no molestar" por unidad y gestión de dispositivos. Con esto la
+app del residente queda completa (timbre en vivo + historial + ajustes).
+
+### Added
+
+- **No molestar / DND (#DoNotDisturb)** — sección en `SettingsPage` para configurar las horas de
+  silencio de una unidad: interruptor, franja `Desde`/`Hasta` y días de la semana (vacío = todos). Lee
+  `GET /dnd?unitId=` y guarda con `PUT /dnd`. Durante la franja se silencian los push de timbres (el
+  timbre se sigue registrando y se ve en vivo con la app abierta). Horarios en UTC.
+- **Dispositivos (#Identity)** — lista los equipos del usuario (`GET /devices`) y permite quitarlos
+  (`DELETE /devices/{id}`) para dejar de recibir push allí.
+- **Selección de unidad compartida** — `useUnitSelection` (`units.ts`) + `UnitPicker` reutilizables;
+  `HistoryPage` ahora los usa (mismo comportamiento) y `SettingsPage` los reusa para el DND.
+- **`formatDateTime`** — helper de fecha (`Intl` es-AR) en `src/lib/datetime.ts`, compartido por
+  Historial y Dispositivos.
+
+### Tests
+
+- `SettingsPage`: carga el "no molestar" de la unidad, alterna el interruptor y guarda (`PUT /dnd`);
+  lista dispositivos y los quita (`DELETE /devices/{id}`).
+
+### Notas
+
+- **Registro de push fuera de alcance**: `POST /devices` necesita un `pushToken` de FCM y todavía no
+  hay integración de Firebase/Web Push en el front; por eso la sección sólo lista y quita.
+- **Invitaciones = panel admin**: `POST /invitations/residents`, `GET /invitations` y
+  `DELETE /invitations/{id}` exigen rol de gestión (owner/manager) en el backend, así que no van en los
+  ajustes del residente (quedan para M4).
+- `GET /devices` y `GET /dnd` reusan operationIds colisionados en el OpenAPI (`List`/`Get`); se fuerza
+  el contrato real con casts acotados y comentados, igual que en `useOpenDoor`/`useRingsByUnit`.
+
 ## [0.5.0] - 2026-06-18
 
 **Historial del residente** (M2): la pantalla de actividad por unidad. Con la sesión, el residente
@@ -188,7 +221,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.2.0...v0.3.0

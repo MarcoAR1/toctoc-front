@@ -6,15 +6,15 @@ import { friendlyMessage } from '@/api/errors'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { UnitPicker } from '@/features/resident/UnitPicker'
 import {
   useAccessByUnit,
   useCallsByUnit,
-  useMyProperties,
-  usePropertyUnits,
   useRingsByUnit,
   type AccessEvent,
   type CallSession,
 } from '@/features/resident/history'
+import { useUnitSelection } from '@/features/resident/units'
 import type { Ring } from '@/features/visitor/api'
 import { cn } from '@/lib/utils'
 
@@ -180,48 +180,11 @@ function HistoryList<T>({
   )
 }
 
-function Selector({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string
-  value: string | undefined
-  onChange: (value: string) => void
-  options: { id: string; label: string }[]
-}) {
-  return (
-    <label className="flex flex-1 flex-col gap-1">
-      <span className="text-muted-foreground text-xs font-medium">{label}</span>
-      <select
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-        className="border-input bg-background focus-visible:ring-ring/50 h-9 rounded-md border px-3 text-sm outline-none focus-visible:ring-[3px]"
-      >
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
-}
-
 /** Historial de timbres / accesos / llamadas del residente, por unidad. */
 export function HistoryPage() {
-  const properties = useMyProperties()
-  const [propertyId, setPropertyId] = useState<string>()
-  const [unitId, setUnitId] = useState<string>()
+  const selection = useUnitSelection()
+  const { properties, units, propertyList, unitList, selectedUnitId } = selection
   const [tab, setTab] = useState<Tab>('rings')
-
-  const propertyList = properties.data ?? []
-  const selectedPropertyId = propertyId ?? propertyList[0]?.id
-
-  const units = usePropertyUnits(selectedPropertyId)
-  const unitList = units.data ?? []
-  const selectedUnitId = unitId ?? unitList[0]?.id
 
   const rings = useRingsByUnit(selectedUnitId)
   const access = useAccessByUnit(selectedUnitId)
@@ -245,32 +208,7 @@ export function HistoryPage() {
         </Card>
       ) : (
         <>
-          {(propertyList.length > 1 || unitList.length > 1) && (
-            <div className="flex flex-wrap gap-3">
-              {propertyList.length > 1 && (
-                <Selector
-                  label="Propiedad"
-                  value={selectedPropertyId}
-                  onChange={(id) => {
-                    setPropertyId(id)
-                    setUnitId(undefined)
-                  }}
-                  options={propertyList.map((p) => ({ id: p.id, label: p.name }))}
-                />
-              )}
-              {unitList.length > 1 && (
-                <Selector
-                  label="Unidad"
-                  value={selectedUnitId}
-                  onChange={setUnitId}
-                  options={unitList.map((u) => ({
-                    id: u.id,
-                    label: u.directoryName ? `${u.label} · ${u.directoryName}` : u.label,
-                  }))}
-                />
-              )}
-            </div>
-          )}
+          <UnitPicker selection={selection} />
 
           {units.isPending ? (
             <Skeleton className="h-16 w-full" />
