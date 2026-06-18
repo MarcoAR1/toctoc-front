@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
-import { Wrench } from 'lucide-react'
+import { MessageSquare, Send, Wrench } from 'lucide-react'
 
 import { friendlyMessage } from '@/api/errors'
 import { Badge } from '@/components/ui/badge'
@@ -18,13 +18,18 @@ import {
 import { useAdminProperties } from '@/features/admin/properties'
 import { ADMIN_ROLE_LABEL } from '@/features/admin/invitations'
 import { usePropertyAdmins, type PropertyAdmin } from '@/features/admin/people'
+import { useAuthStore } from '@/features/auth/store'
 import {
   CLAIM_CATEGORY_LABEL,
   CLAIM_PRIORITY_LABEL,
   CLAIM_PRIORITY_VARIANT,
   CLAIM_STATUS_BADGE,
+  useAddClaimComment,
+  useClaimComments,
   type Claim,
+  type ClaimComment,
 } from '@/features/resident/claims'
+import { cn } from '@/lib/utils'
 
 const DATE_FMT = new Intl.DateTimeFormat('es-AR', {
   day: '2-digit',
@@ -158,9 +163,124 @@ function ClaimActions({ claim, admins }: { claim: Claim; admins: PropertyAdmin[]
   )
 }
 
-/** Tarjeta de un reclamo en el board, con sus acciones de gestión desplegables. */
+const formatWhen = (iso?: string) => (iso ? DATE_FMT.format(new Date(iso)) : '')
+
+/** Una entrada del hilo: resalta las notas internas y etiqueta al autor (vos / equipo / residente). */
+function CommentItem({
+  comment,
+  mine,
+  authorLabel,
+}: {
+  comment: ClaimComment
+  mine: boolean
+  authorLabel: string
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-md border p-2.5 text-sm',
+        comment.internal && 'border-warning/50 bg-warning/10',
+      )}
+    >
+      <div className="text-muted-foreground mb-1 flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="font-medium">{mine ? 'Vos' : authorLabel}</span>
+        {comment.internal && <Badge variant="warning">Nota interna</Badge>}
+        {comment.createdAt && <span>{formatWhen(comment.createdAt)}</span>}
+      </div>
+      <p className="whitespace-pre-wrap">{comment.body}</p>
+    </div>
+  )
+}
+
+/** Hilo del reclamo: respuestas públicas + notas internas, con composer admin (toggle interno). */
+function ClaimThread({ claimId, admins }: { claimId: string; admins: PropertyAdmin[] }) {
+  const myId = useAuthStore((s) => s.user?.id)
+  const comments = useClaimComments(claimId)
+  const addComment = useAddClaimComment(claimId)
+  const [body, setBody] = useState('')
+  const [internal, setInternal] = useState(false)
+
+  const items = comments.data ?? []
+  const authorLabel = (authorId: string) => {
+    const role = admins.find((a) => a.userId === authorId)?.role
+    return role ? ADMIN_ROLE_LABEL[role] : 'Residente'
+  }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    const text = body.trim()
+    if (!text) return
+    try {
+      await addComment.mutateAsync({ body: text, internal })
+      setBody('')
+      setInternal(false)
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-md border p-3">
+      {comments.isPending ? (
+        <Skeleton className="h-16 w-full" />
+      ) : comments.isError ? (
+        <p className="text-destructive text-sm" role="alert">
+          {friendlyMessage(comments.error)}
+        </p>
+      ) : items.length === 0 ? (
+        <p className="text-muted-foreground text-sm">Todavía no hay mensajes.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {items.map((comment) => (
+            <li key={comment.id}>
+              <CommentItem
+                comment={comment}
+                mine={Boolean(myId) && comment.authorId === myId}
+                authorLabel={authorLabel(comment.authorId)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form onSubmit={onSubmit} className="flex flex-col gap-2">
+        <textarea
+          aria-label="Mensaje"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={2}
+          placeholder={internal ? 'Nota interna para el equipo…' : 'Respondé al residente…'}
+          className={TEXTAREA_CLASS}
+        />
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={internal}
+              onChange={(e) => setInternal(e.target.checked)}
+              className="size-4"
+            />
+            Nota interna
+          </label>
+          <Button
+            type="submit"
+            size="sm"
+            className="gap-1.5"
+            disabled={addComment.isPending || body.trim().length === 0}
+          >
+            {addComment.isPending ? <Spinner className="size-4" /> : <Send className="size-4" />}
+            Enviar
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+/** Tarjeta de un reclamo en el board, con sus acciones de gestión y el hilo desplegables. */
 function AdminClaimCard({ claim, admins }: { claim: Claim; admins: PropertyAdmin[] }) {
   const [managing, setManaging] = useState(false)
+  const [showComments, setShowComments] = useState(false)
   const status = CLAIM_STATUS_BADGE[claim.status]
   const terminal = claim.status === 'closed' || claim.status === 'cancelled'
 
@@ -200,25 +320,40 @@ function AdminClaimCard({ claim, admins }: { claim: Claim; admins: PropertyAdmin
           </p>
         )}
 
-        {!terminal &&
-          (managing ? (
-            <div className="flex flex-col gap-2">
-              <ClaimActions claim={claim} admins={admins} />
-              <Button size="sm" variant="ghost" className="self-start" onClick={() => setManaging(false)}>
-                Listo
-              </Button>
-            </div>
-          ) : (
+        <div className="flex flex-wrap gap-2">
+          {!terminal && !managing && (
             <Button
               size="sm"
               variant="outline"
-              className="gap-1.5 self-start"
+              className="gap-1.5"
               onClick={() => setManaging(true)}
             >
               <Wrench className="size-4" aria-hidden="true" />
               Gestionar
             </Button>
-          ))}
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            aria-expanded={showComments}
+            onClick={() => setShowComments((v) => !v)}
+          >
+            <MessageSquare className="size-4" aria-hidden="true" />
+            Conversación
+          </Button>
+        </div>
+
+        {managing && !terminal && (
+          <div className="flex flex-col gap-2">
+            <ClaimActions claim={claim} admins={admins} />
+            <Button size="sm" variant="ghost" className="self-start" onClick={() => setManaging(false)}>
+              Listo
+            </Button>
+          </div>
+        )}
+
+        {showComments && <ClaimThread claimId={claim.id} admins={admins} />}
       </CardContent>
     </Card>
   )

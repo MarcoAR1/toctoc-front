@@ -37,6 +37,14 @@ const CLAIM = {
   createdAt: '2026-06-18T12:00:00Z',
 }
 const ADMIN = { id: 'a1', propertyId: 'p1', userId: 'user-manager', role: 'manager', status: 'active' }
+const COMMENT = {
+  id: 'cm1',
+  claimId: 'c1',
+  authorId: 'user-manager',
+  body: 'Ya estamos viéndolo',
+  internal: false,
+  createdAt: '2026-06-18T13:00:00Z',
+}
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -57,6 +65,8 @@ describe('AdminClaimsPage', () => {
           return Promise.resolve({ data: [CLAIM] })
         case '/properties/{propertyId}/admins':
           return Promise.resolve({ data: [ADMIN] })
+        case '/claims/{claimId}/comments':
+          return Promise.resolve({ data: [COMMENT] })
         default:
           return Promise.resolve({ data: [] })
       }
@@ -69,6 +79,10 @@ describe('AdminClaimsPage', () => {
           return Promise.resolve({ data: { ...CLAIM, status: 'resolved', resolution: 'Reparado' } })
         case '/claims/{claimId}/close':
           return Promise.resolve({ data: { ...CLAIM, status: 'closed' } })
+        case '/claims/{claimId}/comments':
+          return Promise.resolve({
+            data: { id: 'cm2', claimId: 'c1', authorId: 'user-manager', body: 'nuevo', internal: false },
+          })
         default:
           return Promise.resolve({ data: {} })
       }
@@ -141,5 +155,53 @@ describe('AdminClaimsPage', () => {
     const init = call![1] as { params: { path: { claimId: string } }; body: Record<string, unknown> }
     expect(init.params.path.claimId).toBe('c1')
     expect(init.body).toMatchObject({ assigneeUserId: 'user-manager' })
+  })
+
+  it('muestra el hilo de comentarios al abrir la conversación', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /conversación/i }))
+
+    expect(await screen.findByText('Ya estamos viéndolo')).toBeInTheDocument()
+    const call = getMock.mock.calls.find((c) => c[0] === '/claims/{claimId}/comments')
+    expect(call).toBeTruthy()
+    expect((call![1] as { params: { path: { claimId: string } } }).params.path.claimId).toBe('c1')
+  })
+
+  it('publica una respuesta pública al residente', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /conversación/i }))
+    await screen.findByText('Ya estamos viéndolo')
+    await user.type(screen.getByLabelText('Mensaje'), 'Mañana pasa el plomero')
+    await user.click(screen.getByRole('button', { name: /enviar/i }))
+
+    await waitFor(() =>
+      expect(postMock.mock.calls.find((c) => c[0] === '/claims/{claimId}/comments')).toBeTruthy(),
+    )
+    const call = postMock.mock.calls.find((c) => c[0] === '/claims/{claimId}/comments')
+    const init = call![1] as { params: { path: { claimId: string } }; body: Record<string, unknown> }
+    expect(init.params.path.claimId).toBe('c1')
+    expect(init.body).toMatchObject({ body: 'Mañana pasa el plomero', internal: false })
+  })
+
+  it('publica una nota interna (internal:true)', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /conversación/i }))
+    await screen.findByText('Ya estamos viéndolo')
+    await user.type(screen.getByLabelText('Mensaje'), 'Revisar caño del 3B')
+    await user.click(screen.getByLabelText('Nota interna'))
+    await user.click(screen.getByRole('button', { name: /enviar/i }))
+
+    await waitFor(() =>
+      expect(postMock.mock.calls.find((c) => c[0] === '/claims/{claimId}/comments')).toBeTruthy(),
+    )
+    const call = postMock.mock.calls.find((c) => c[0] === '/claims/{claimId}/comments')
+    const init = call![1] as { body: Record<string, unknown> }
+    expect(init.body).toMatchObject({ body: 'Revisar caño del 3B', internal: true })
   })
 })

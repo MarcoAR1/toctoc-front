@@ -7,6 +7,31 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-06-18
+
+**Panel admin — hilo de reclamos** (M4): completa la mesa de ayuda con la conversación del reclamo,
+para responderle al residente y dejar notas internas del equipo.
+
+### Added
+
+- **Hilo de comentarios (#Claims)** — cada reclamo del board despliega su conversación
+  (`GET /claims/{id}/comments`, botón "Conversación") con las respuestas públicas y las notas
+  internas, etiquetando al autor (vos / equipo / residente) y resaltando las notas internas.
+- **Responder y notas internas (#Claims)** — composer por reclamo (`POST /claims/{id}/comments`) con
+  un switch "Nota interna": las notas internas (`internal: true`) solo las ve el equipo; sin el
+  switch, la respuesta es pública para el residente.
+
+### Tests
+
+- `AdminClaimsPage`: abrir la conversación carga el hilo; publicar una respuesta pública
+  (`internal: false`) y una nota interna (`internal: true`) con el `body`/`claimId` correctos.
+
+### Notas
+
+- Reutiliza los hooks `useClaimComments` / `useAddClaimComment` de `resident/claims` (el board admin
+  envía `internal`, que el backend ignora para residentes). El hilo solo consulta al expandirse, para
+  no disparar una query por cada reclamo del board.
+
 ## [0.13.0] - 2026-06-18
 
 **Panel admin — board de reclamos** (M4): nueva sección en el panel para gestionar los reclamos que
@@ -447,7 +472,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.10.0...v0.11.0
