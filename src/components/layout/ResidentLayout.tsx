@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
 import { ModeToggle } from '@/components/theme/mode-toggle'
+import { useResidentRealtime } from '@/features/resident/useResidentRealtime'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -13,6 +14,9 @@ const NAV = [
 
 /** Layout del residente: app shell mobile con navegación inferior. */
 export function ResidentLayout() {
+  // Conecta el socket autenticado y captura timbres entrantes mientras el residente usa la app.
+  const { connected } = useResidentRealtime()
+
   return (
     <div className="bg-background flex min-h-dvh flex-col">
       <header className="safe-top bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 backdrop-blur">
@@ -20,7 +24,16 @@ export function ResidentLayout() {
           <Logo className="size-7" />
           <span className="font-semibold">TocToc</span>
         </div>
-        <ModeToggle />
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <span
+              className={cn('size-2 rounded-full', connected ? 'bg-emerald-500' : 'bg-amber-500')}
+              aria-hidden="true"
+            />
+            {connected ? 'En vivo' : 'Conectando…'}
+          </span>
+          <ModeToggle />
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6 pb-24">

@@ -7,6 +7,46 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-17
+
+La otra mitad del **loop del timbre**: la **app del residente** (M2). Con la sesión del magic link, el
+residente recibe los timbres **en vivo** por socket autenticado, los atiende o rechaza y **abre la
+puerta** — el primero que responde gana.
+
+### Added
+
+- **Realtime del residente (#Rings)** — `useResidentRealtime` (montado en `ResidentLayout`) conecta el
+  socket **autenticado** (auto-une a `user:{userId}`), escucha `ring.created` / `ring.updated` y vuelca
+  los timbres a un store Zustand + la cache de TanStack Query, con aviso (toast) al sonar. El header
+  muestra el estado de conexión (**En vivo** / **Conectando…**).
+- **Home del residente (#Rings)** — `ResidentHomePage` lista los timbres **sonando ahora** (nombre y
+  motivo) con enlace al detalle, y un estado vacío cuando no hay ninguno.
+- **Timbre entrante (#Rings)** — `IncomingPage` (`/app/incoming/:id`): foto/avatar del visitante,
+  nombre, motivo y mensaje; **Atender** (`POST /rings/{id}/answer`), **Rechazar**
+  (`POST /rings/{id}/reject`), **Atender y abrir** (orquesta ambas) y **Abrir puerta**
+  (`POST /access/open` → `AccessEvent`, mostrando `opened`/`denied`/`failed`). Refleja “ya atendido por
+  otra persona” y maneja el `409` (otro lo tomó). Lee el timbre del store con respaldo a `GET /rings/{id}`.
+- **Hooks y store del residente** — `src/features/resident/api.ts` (`useAnswerRing`, `useRejectRing`,
+  `useOpenDoor`) y `src/features/resident/store.ts` (store realtime + selector `ringingRings`).
+
+### Fixed
+
+- **Tests** — registrado el `cleanup()` de Testing Library en el setup (con `globals: false` no se
+  registraba solo), evitando que los componentes se acumulen en el DOM entre tests del mismo archivo.
+
+### Tests
+
+- `ResidentHomePage`: lista sólo los timbres sonando (no los resueltos) con enlace al detalle.
+  `IncomingPage`: atiende y luego abre la puerta; avisa cuando otro residente ya atendió.
+
+### Notas
+
+- El OpenAPI del backend reusa el operationId `Open` para `/access/open` y `/lockers/open`;
+  openapi-typescript los colapsa y tipa mal el body de `/access/open`. Se fuerza el contrato real
+  (`OpenDoorInput` → `AccessEvent`) con un cast acotado y documentado en `useOpenDoor`.
+- **Llamada en vivo** (WebRTC, M3) e **historial** (`GET /rings?unitId=` / `GET /access?unitId=`)
+  quedan para próximas iteraciones.
+
 ## [0.3.0] - 2026-06-17
 
 Primer **loop del timbre** del lado del visitante (M1): escanear/ingresar el código de la propiedad,
@@ -119,7 +159,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MarcoAR1/toctoc-front/releases/tag/v0.1.0

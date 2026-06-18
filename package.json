@@ -1,7 +1,7 @@
 {
   "name": "toctoc-front",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "Frontend único de TocToc (PWA + Capacitor): visitante, residente y panel admin",
   "engines": {
