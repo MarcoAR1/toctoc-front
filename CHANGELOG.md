@@ -7,6 +7,35 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-06-18
+
+**Panel admin — residentes y equipo** (M4): cierra la gestión de personas del detalle de la propiedad.
+Ahora se ve quién vive en cada unidad y quién administra la propiedad, con opción de revocar accesos.
+
+### Added
+
+- **Residentes por unidad (#People)** — cada unidad despliega sus residentes (`GET /units/{id}/memberships`)
+  con rol y estado, y permite **remover** a cada uno (`DELETE /units/{id}/memberships/{membershipId}`).
+- **Equipo (#People)** — sección de co-admins de la propiedad (`GET /properties/{id}/admins`) con rol y
+  estado; se puede **revocar** a managers y encargados (`DELETE /properties/{id}/admins/{adminId}`). El
+  `owner` aparece destacado y no es revocable (no se muestra la acción).
+- **Hooks** — `src/features/admin/people.ts` (`useUnitMemberships`, `useRevokeMembership`,
+  `usePropertyAdmins`, `useRevokeAdmin`) + `PERSON_STATUS_LABEL`.
+
+### Tests
+
+- `AdminPropertyDetailPage`: desplegar los residentes de una unidad y remover uno (`DELETE` con el
+  `unitId`/`membershipId` correctos); listar co-admins y revocar a un manager, verificando que el
+  `owner` no expone botón de revocar.
+
+### Notas
+
+- Las entidades `Membership` y `PropertyAdmin` sólo traen `userId` (sin email/nombre) → se muestra el
+  `userId`; el alta de personas sigue siendo por invitación (v0.11.0).
+- Colisión de operationId: `List` (GET memberships) y `Revoke` (DELETE membership) colisionan → cast
+  acotado; `ListAdmins`/`RevokeAdmin` son únicos. Revocar co-admins es owner-only en el backend (`403`
+  vía `friendlyMessage`); revocar al `owner` responde `400` y por eso se oculta la acción.
+
 ## [0.11.0] - 2026-06-18
 
 **Panel admin — invitaciones + aceptación** (M4): onboarding de personas por email. El admin invita
@@ -389,7 +418,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.8.0...v0.9.0

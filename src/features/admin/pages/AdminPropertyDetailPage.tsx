@@ -2,7 +2,18 @@ import { useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { QRCodeSVG } from 'qrcode.react'
-import { ArrowLeft, Download, Link2, Mail, Pencil, Plus, Power, RefreshCw, Trash2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  Download,
+  Link2,
+  Mail,
+  Pencil,
+  Plus,
+  Power,
+  RefreshCw,
+  Trash2,
+  Users,
+} from 'lucide-react'
 
 import { friendlyMessage } from '@/api/errors'
 import { Badge } from '@/components/ui/badge'
@@ -41,6 +52,14 @@ import {
   type ManageableAdminRole,
   type MembershipRole,
 } from '@/features/admin/invitations'
+import {
+  PERSON_STATUS_LABEL,
+  usePropertyAdmins,
+  useRevokeAdmin,
+  useRevokeMembership,
+  useUnitMemberships,
+  type PropertyAdmin,
+} from '@/features/admin/people'
 
 const VISIBILITIES = Object.keys(DIRECTORY_VISIBILITY_LABEL) as DirectoryVisibility[]
 const MEMBERSHIP_ROLES = Object.keys(MEMBERSHIP_ROLE_LABEL) as MembershipRole[]
@@ -365,17 +384,86 @@ function NewUnitForm({ propertyId, onClose }: { propertyId: string; onClose: () 
   )
 }
 
-/** Fila de una unidad en la lista del detalle. */
-function UnitRow({ unit }: { unit: Unit }) {
+/** Residentes (membresías) de una unidad, con la acción de remover a cada uno. */
+function UnitMembers({ unitId }: { unitId: string }) {
+  const members = useUnitMemberships(unitId)
+  const revoke = useRevokeMembership(unitId)
+  const items = members.data ?? []
+
+  async function onRevoke(membershipId: string) {
+    try {
+      await revoke.mutateAsync(membershipId)
+      toast.success('Residente removido')
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  if (members.isPending) return <Skeleton className="h-10 w-full" />
+  if (members.isError)
+    return (
+      <p className="text-destructive text-sm" role="alert">
+        {friendlyMessage(members.error)}
+      </p>
+    )
+  if (items.length === 0)
+    return <p className="text-muted-foreground text-sm">Esta unidad todavía no tiene residentes.</p>
+
   return (
-    <div className="bg-card flex items-center justify-between gap-2 rounded-lg border p-3">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{unit.label}</p>
-        {unit.directoryName && (
-          <p className="text-muted-foreground truncate text-xs">{unit.directoryName}</p>
-        )}
+    <ul className="flex flex-col gap-2 border-t pt-3">
+      {items.map((m) => (
+        <li key={m.id} className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate font-mono text-xs">{m.userId}</p>
+            <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
+              <span>{MEMBERSHIP_ROLE_LABEL[m.role]}</span>
+              {m.status !== 'active' && (
+                <Badge variant="secondary">{PERSON_STATUS_LABEL[m.status]}</Badge>
+              )}
+            </div>
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label="Remover residente"
+            onClick={() => onRevoke(m.id)}
+            disabled={revoke.isPending || m.status === 'revoked'}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Fila de una unidad en la lista del detalle, con sus residentes desplegables. */
+function UnitRow({ unit }: { unit: Unit }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="bg-card flex flex-col gap-3 rounded-lg border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{unit.label}</p>
+          {unit.directoryName && (
+            <p className="text-muted-foreground truncate text-xs">{unit.directoryName}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {unit.status === 'disabled' && <Badge variant="secondary">Deshabilitada</Badge>}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1.5"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <Users className="size-4" aria-hidden="true" />
+            Residentes
+          </Button>
+        </div>
       </div>
-      {unit.status === 'disabled' && <Badge variant="secondary">Deshabilitada</Badge>}
+      {open && <UnitMembers unitId={unit.id} />}
     </div>
   )
 }
@@ -655,6 +743,84 @@ function InvitationsSection({ property }: { property: Property }) {
   )
 }
 
+/** Fila de un co-admin con su rol y la acción de revocar (el `owner` no se puede revocar). */
+function AdminRow({
+  admin,
+  onRevoke,
+  revoking,
+}: {
+  admin: PropertyAdmin
+  onRevoke: () => void
+  revoking: boolean
+}) {
+  const isOwner = admin.role === 'owner'
+  return (
+    <div className="bg-card flex items-center justify-between gap-2 rounded-lg border p-3">
+      <div className="min-w-0">
+        <p className="truncate font-mono text-xs">{admin.userId}</p>
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
+          <Badge variant={isOwner ? 'default' : 'secondary'}>{ADMIN_ROLE_LABEL[admin.role]}</Badge>
+          {admin.status !== 'active' && <span>{PERSON_STATUS_LABEL[admin.status]}</span>}
+        </div>
+      </div>
+      {!isOwner && (
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Revocar co-admin"
+          onClick={onRevoke}
+          disabled={revoking || admin.status === 'revoked'}
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      )}
+    </div>
+  )
+}
+
+/** Equipo de la propiedad: co-admins activos (owner, managers y encargados) con opción de revocar. */
+function AdminsSection({ propertyId }: { propertyId: string }) {
+  const admins = usePropertyAdmins(propertyId)
+  const revoke = useRevokeAdmin(propertyId)
+  const items = admins.data ?? []
+
+  async function onRevoke(adminId: string) {
+    try {
+      await revoke.mutateAsync(adminId)
+      toast.success('Co-admin revocado')
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-base font-semibold">Equipo</h2>
+      {admins.isPending ? (
+        <Skeleton className="h-16 w-full" />
+      ) : admins.isError ? (
+        <p className="text-destructive text-sm" role="alert">
+          {friendlyMessage(admins.error)}
+        </p>
+      ) : items.length === 0 ? (
+        <Card>
+          <CardContent className="text-muted-foreground py-6 text-center text-sm">
+            Todavía no hay co-admins.
+          </CardContent>
+        </Card>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {items.map((a) => (
+            <li key={a.id}>
+              <AdminRow admin={a} onRevoke={() => onRevoke(a.id)} revoking={revoke.isPending} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 /** Detalle de una propiedad: cabecera + unidades (alta incluida). */
 export function AdminPropertyDetailPage() {
   const { id } = useParams()
@@ -682,6 +848,7 @@ export function AdminPropertyDetailPage() {
           <PropertyOverview property={property.data} />
           <QrSection property={property.data} />
           <UnitsSection propertyId={property.data.id} />
+          <AdminsSection propertyId={property.data.id} />
           <InvitationsSection property={property.data} />
         </>
       ) : null}

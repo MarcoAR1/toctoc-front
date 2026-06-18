@@ -40,6 +40,15 @@ const INVITATION = {
   expiresAt: '2026-07-01T12:00:00Z',
   invitedBy: 'admin',
 }
+const MEMBERSHIP = { id: 'm1', userId: 'user-resident-1', unitId: 'u1', role: 'tenant', status: 'active' }
+const OWNER_ADMIN = { id: 'a1', propertyId: 'p1', userId: 'user-owner', role: 'owner', status: 'active' }
+const MANAGER_ADMIN = {
+  id: 'a2',
+  propertyId: 'p1',
+  userId: 'user-manager',
+  role: 'manager',
+  status: 'active',
+}
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -66,6 +75,10 @@ describe('AdminPropertyDetailPage', () => {
           return Promise.resolve({ data: QR })
         case '/invitations':
           return Promise.resolve({ data: [INVITATION] })
+        case '/units/{unitId}/memberships':
+          return Promise.resolve({ data: [MEMBERSHIP] })
+        case '/properties/{propertyId}/admins':
+          return Promise.resolve({ data: [OWNER_ADMIN, MANAGER_ADMIN] })
         default:
           return Promise.resolve({ data: [] })
       }
@@ -206,5 +219,43 @@ describe('AdminPropertyDetailPage', () => {
     ]
     expect(path).toBe('/invitations/{invitationId}')
     expect(init.params.path.invitationId).toBe('inv1')
+  })
+
+  it('despliega los residentes de una unidad y remueve uno', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /residentes/i }))
+
+    expect(await screen.findByText('user-resident-1')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Remover residente' }))
+
+    await waitFor(() => expect(deleteMock).toHaveBeenCalled())
+    const [path, init] = deleteMock.mock.calls[0] as [
+      string,
+      { params: { path: { unitId: string; membershipId: string } } },
+    ]
+    expect(path).toBe('/units/{unitId}/memberships/{membershipId}')
+    expect(init.params.path.unitId).toBe('u1')
+    expect(init.params.path.membershipId).toBe('m1')
+  })
+
+  it('lista los co-admins y revoca a uno (el owner no se puede revocar)', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByText('user-owner')).toBeInTheDocument()
+    expect(screen.getByText('user-manager')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Revocar co-admin' }))
+
+    await waitFor(() => expect(deleteMock).toHaveBeenCalled())
+    const [path, init] = deleteMock.mock.calls[0] as [
+      string,
+      { params: { path: { propertyId: string; adminId: string } } },
+    ]
+    expect(path).toBe('/properties/{propertyId}/admins/{adminId}')
+    expect(init.params.path.propertyId).toBe('p1')
+    expect(init.params.path.adminId).toBe('a2')
   })
 })
