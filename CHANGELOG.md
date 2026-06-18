@@ -7,6 +7,39 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-17
+
+Primer **loop del timbre** del lado del visitante (M1): escanear/ingresar el código de la propiedad,
+elegir la unidad y tocar el timbre, con seguimiento del estado **en vivo** hasta que el residente
+atiende, rechaza o se agota el tiempo. Todo público, sin sesión.
+
+### Added
+
+- **Directorio del visitante (#Rings)** — `DirectoryPage` real: resuelve la propiedad por código
+  (`GET /properties/by-code/{code}`), lista las unidades activas con buscador (por `directoryName` o
+  `label`) y maneja los estados cargando / código inválido (404) / **directorio privado** (`code_only`,
+  sin unidades). Soporta el deep-link `/r/:code/:unitCode` preseleccionando la unidad.
+- **Formulario de timbre (#Rings)** — `RingForm`: motivo (`visit`/`delivery`/`service`), nombre y
+  mensaje opcionales; dispara `POST /rings` y navega a la espera con el `ring.id`.
+- **Pantalla de espera en vivo (#Rings)** — `RingWaitingPage`: estado del timbre por **socket anónimo**
+  (`ring:subscribe` + `ring.updated`, con re-suscripción al reconectar) y **fallback a polling**
+  (`GET /rings/{id}` cada 2.5s mientras suena). Botón **Cancelar** (`POST /rings/{id}/cancel`) y
+  desenlaces por estado: atendido / rechazado / sin respuesta (timeout) / cancelado.
+- **Hooks tipados del visitante** — `src/features/visitor/api.ts`: `usePropertyDirectory`,
+  `useCreateRing`, `useRing` (con `refetchInterval` que se detiene en estados terminales) y
+  `useCancelRing`, sobre el cliente `openapi-fetch` tipado y TanStack Query.
+
+### Tests
+
+- `DirectoryPage`: lista unidades y abre el formulario al elegir una; avisa "directorio privado"
+  cuando no hay unidades. `RingWaitingPage`: muestra "Tocando el timbre" + cancelar mientras suena y
+  el desenlace cuando atienden.
+
+### Pendiente
+
+- **Foto del visitante** (`photo` en `POST /rings`) y **escalado a llamada en vivo** (WebRTC, M3)
+  quedan para una próxima iteración; el contrato del backend ya los contempla.
+
 ## [0.2.0] - 2026-06-17
 
 Primera feature funcional: **autenticación**. Login/registro _passwordless_ por **magic link**
@@ -86,6 +119,7 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MarcoAR1/toctoc-front/releases/tag/v0.1.0
