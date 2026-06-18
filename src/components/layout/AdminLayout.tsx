@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
 import { ModeToggle } from '@/components/theme/mode-toggle'
+import { useAdminRealtime } from '@/features/admin/useAdminRealtime'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -12,6 +13,9 @@ const NAV = [
 
 /** Layout del panel admin: desktop-first con sidebar. */
 export function AdminLayout() {
+  // Socket autenticado del admin: refresca el board y el hilo de reclamos en vivo.
+  const { connected } = useAdminRealtime()
+
   return (
     <div className="bg-background min-h-dvh md:grid md:grid-cols-[240px_1fr]">
       <aside className="hidden border-r md:flex md:flex-col">
@@ -48,7 +52,16 @@ export function AdminLayout() {
             <span className="font-semibold">Admin</span>
           </div>
           <span className="text-muted-foreground hidden text-sm md:inline">Panel de administración</span>
-          <ModeToggle />
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+              <span
+                className={cn('size-2 rounded-full', connected ? 'bg-emerald-500' : 'bg-amber-500')}
+                aria-hidden="true"
+              />
+              {connected ? 'En vivo' : 'Conectando…'}
+            </span>
+            <ModeToggle />
+          </div>
         </header>
         <main className="flex-1 px-4 py-6 md:px-6">
           <Outlet />

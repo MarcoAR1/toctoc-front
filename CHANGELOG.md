@@ -7,6 +7,32 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-06-18
+
+**Panel admin — reclamos en vivo** (M4): el board y el hilo de reclamos se actualizan solos vía
+socket, sin recargar; cierra la mesa de ayuda del panel.
+
+### Added
+
+- **Realtime de reclamos (#Claims)** — `useAdminRealtime` conecta el socket autenticado del admin
+  (room `user:{userId}`) y, ante los eventos `claim.*` que recibe (`claim.created`, `claim.assigned`,
+  `claim.resolved`, `claim.closed`, `claim.reopened`, `claim.cancelled`, `claim.comment`), cachea el
+  `Claim` y refresca el board de su propiedad y el hilo del reclamo (React Query).
+- **Avisos** — toast en `claim.created` ("Nuevo reclamo") y `claim.comment` ("Nuevo comentario en un
+  reclamo") con el asunto del reclamo como descripción.
+- **Indicador "En vivo"** — `AdminLayout` monta el hook una sola vez y muestra el estado de conexión
+  del socket en el header (espejando el del residente).
+
+### Changed
+
+- **`claimsBoardPrefix(propertyId)`** — nuevo helper en `admin/claims.ts` para invalidar todos los
+  filtros del board de una propiedad; lo reusan las mutaciones y el realtime.
+
+### Tests
+
+- `useAdminRealtime`: `claim.created` cachea el reclamo, invalida el board (prefijo de propiedad) y el
+  hilo, y avisa; `claim.comment` refresca board + hilo; suscribe/desuscribe los eventos `claim.*`.
+
 ## [0.14.0] - 2026-06-18
 
 **Panel admin — hilo de reclamos** (M4): completa la mesa de ayuda con la conversación del reclamo,
@@ -472,7 +498,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.11.0...v0.12.0

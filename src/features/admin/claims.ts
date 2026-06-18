@@ -10,8 +10,11 @@ export type ResolveClaimBody = components['schemas']['ResolveClaimBody']
 /** Filtro del board: cualquier `ClaimStatus` o `all` (sin filtro). */
 export type ClaimStatusFilter = ClaimStatus | 'all'
 
+/** Prefijo de cache del board de una propiedad (cubre todos los filtros de estado). */
+export const claimsBoardPrefix = (propertyId: string) => ['admin', 'claims', propertyId] as const
+
 export const claimsBoardKey = (propertyId: string, status: ClaimStatusFilter) =>
-  ['admin', 'claims', propertyId, status] as const
+  [...claimsBoardPrefix(propertyId), status] as const
 
 /**
  * `GET /claims?propertyId=&status=` — board de la propiedad (admin, más reciente primero).
@@ -36,7 +39,7 @@ export function useClaimsBoard(propertyId: string | undefined, status: ClaimStat
 function onClaimUpdated(queryClient: QueryClient) {
   return (claim: Claim) => {
     queryClient.setQueryData(claimKey(claim.id), claim)
-    queryClient.invalidateQueries({ queryKey: ['admin', 'claims', claim.propertyId] })
+    queryClient.invalidateQueries({ queryKey: claimsBoardPrefix(claim.propertyId) })
   }
 }
 
