@@ -7,6 +7,36 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-18
+
+**Panel admin — propiedades** (arranca M4): la consola de administración. El admin ve las propiedades
+que gestiona, da de alta nuevas (onboarding express) y abre el detalle para cargar unidades.
+
+### Added
+
+- **Propiedades (#Properties)** — `AdminPropertiesPage` real: lista las propiedades del usuario
+  (`GET /properties`) con tipo, código y estado, y un formulario de **alta express** (`POST /properties`)
+  eligiendo tipo y visibilidad del directorio (las unidades se autoprovisionan según el tipo).
+- **Detalle de propiedad (#Properties)** — `AdminPropertyDetailPage`: cabecera (nombre, tipo, código,
+  estado y visibilidad del directorio) + sección de **unidades** (`GET /properties/{id}/units`) con alta
+  de unidad (`POST /properties/{id}/units`).
+- **Hooks de admin** (`src/features/admin/properties.ts`): `useAdminProperties`, `useProperty`,
+  `usePropertyUnits`, `useCreateProperty`, `useAddUnit` + mapas de etiquetas (tipo/estado/visibilidad).
+
+### Tests
+
+- `AdminPropertiesPage` (lista, estado vacío, crear con el body correcto) y `AdminPropertyDetailPage`
+  (cabecera + unidades, agregar unidad) con `@/api/client` mockeado.
+
+### Notas
+
+- **Colisión de operationId** (igual que en milestones anteriores): `Create` (lo gana `POST /surveys`)
+  y `GetById` (lo gana `GET /rings/{ringId}`) resuelven a otra operación en el OpenAPI, así que
+  `POST /properties` y `GET /properties/{id}` usan un cast acotado y comentado. `ListMine` / `ListUnits`
+  / `AddUnit` son únicos y quedan bien tipados.
+- **Próximas rebanadas del panel** (M4): QR (ver/imprimir/rotar), editar/habilitar/deshabilitar la
+  propiedad, residentes (membresías) y co-admins, invitaciones por email, board de reclamos y bitácoras.
+
 ## [0.8.0] - 2026-06-18
 
 **Reclamos del residente** (contexto `claims`): mesa de ayuda del edificio. El residente abre un
@@ -292,7 +322,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.5.0...v0.6.0
