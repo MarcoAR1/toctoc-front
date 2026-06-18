@@ -7,6 +7,35 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-18
+
+**Historial del residente** (M2): la pantalla de actividad por unidad. Con la sesión, el residente
+elige su propiedad/unidad y revisa **timbres**, **accesos** y **llamadas** (más reciente primero).
+
+### Added
+
+- **Historial del residente (#Rings/#Access/#Calls)** — `HistoryPage` real: descubre las unidades vía
+  `GET /properties` + `GET /properties/{id}/units`, con selector de propiedad y unidad (ocultos cuando
+  hay una sola). Pestañas **Timbres** (`GET /rings?unitId=`), **Accesos** (`GET /access?unitId=`) y
+  **Llamadas** (`GET /calls/by-unit?unitId=`), cada una con estados de carga, vacío y error (incl. `403`).
+- **Hooks del historial** — `src/features/resident/history.ts`: `useMyProperties`, `usePropertyUnits`,
+  `useRingsByUnit`, `useAccessByUnit`, `useCallsByUnit` (TanStack Query, habilitados por unidad).
+- **Filas y badges de estado** — cada ítem muestra ícono, nombre/motivo, fecha (`Intl` es-AR) y un badge
+  por estado (atendido/abierta/finalizada → éxito; rechazado/denegado/falló → destructivo; etc.).
+
+### Tests
+
+- `HistoryPage`: muestra timbres por defecto, cambia entre pestañas (accesos/llamadas) y oculta los
+  selectores cuando hay una sola propiedad/unidad; estado vacío sin propiedades.
+
+### Notas
+
+- `GET /rings` reusa el operationId `List` (colisiona con otros controllers); como con `/access/open`,
+  se fuerza el contrato real (`unitId → Ring[]`) con un cast acotado en `useRingsByUnit`.
+- No hay endpoint “mis unidades”: `GET /properties/{id}/units` lista **todas** las de la propiedad (el
+  backend sólo pide JWT). El historial de una unidad ajena responde `403` y se muestra como tal; un
+  endpoint de membresías propias permitiría afinar el selector a futuro.
+
 ## [0.4.0] - 2026-06-17
 
 La otra mitad del **loop del timbre**: la **app del residente** (M2). Con la sesión del magic link, el
@@ -159,7 +188,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.1.0...v0.2.0
