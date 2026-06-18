@@ -1,11 +1,14 @@
-import { Building2 } from 'lucide-react'
+import { Building2, ClipboardList } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
 import { ModeToggle } from '@/components/theme/mode-toggle'
 import { cn } from '@/lib/utils'
 
-const NAV = [{ to: '/admin', label: 'Propiedades', icon: Building2, end: true }]
+const NAV = [
+  { to: '/admin', label: 'Propiedades', icon: Building2, end: true },
+  { to: '/admin/claims', label: 'Reclamos', icon: ClipboardList, end: false },
+]
 
 /** Layout del panel admin: desktop-first con sidebar. */
 export function AdminLayout() {

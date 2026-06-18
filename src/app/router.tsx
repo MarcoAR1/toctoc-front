@@ -8,6 +8,7 @@ import { VisitorLayout } from '@/components/layout/VisitorLayout'
 import { InviteAcceptPage } from '@/features/auth/pages/InviteAcceptPage'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { VerifyPage } from '@/features/auth/pages/VerifyPage'
+import { AdminClaimsPage } from '@/features/admin/pages/AdminClaimsPage'
 import { AdminPropertiesPage } from '@/features/admin/pages/AdminPropertiesPage'
 import { AdminPropertyDetailPage } from '@/features/admin/pages/AdminPropertyDetailPage'
 import { ClaimDetailPage } from '@/features/resident/pages/ClaimDetailPage'
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/admin', element: <AdminPropertiesPage /> },
           { path: '/admin/properties/:id', element: <AdminPropertyDetailPage /> },
+          { path: '/admin/claims', element: <AdminClaimsPage /> },
         ],
       },
     ],

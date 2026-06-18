@@ -7,6 +7,35 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-06-18
+
+**Panel admin — board de reclamos** (M4): nueva sección en el panel para gestionar los reclamos que
+abren los residentes, con filtro por estado y las transiciones de la mesa de ayuda.
+
+### Added
+
+- **Board de reclamos (#Claims)** — página `/admin/claims` (entrada "Reclamos" en el sidebar): elige
+  una propiedad, filtra por estado (todos / abiertos / en progreso / resueltos / cerrados / cancelados)
+  y lista los reclamos más recientes primero (`GET /claims?propertyId=&status=`).
+- **Gestión de un reclamo (#Claims)** — por tarjeta: **asignar** a un co-admin
+  (`POST /claims/{id}/assign`, `open → in_progress`), **resolver** con resolución opcional
+  (`POST /claims/{id}/resolve`) y **cerrar** (`POST /claims/{id}/close`). Los reclamos terminales
+  (cerrado / cancelado) se muestran sin acciones.
+- **Hooks** — `src/features/admin/claims.ts` (`useClaimsBoard`, `useAssignClaim`, `useResolveClaim`,
+  `useCloseClaim`), reutilizando tipos y etiquetas de `resident/claims`.
+
+### Tests
+
+- `AdminClaimsPage`: listar el board y filtrar por estado (`GET` con `status=open`); asignar a un
+  co-admin, resolver con resolución y cerrar (cada `POST` con el `claimId`/body correctos).
+
+### Notas
+
+- Colisión de operationId: `ListForProperty` (GET board) la comparte el log de llamadas pero `/claims`
+  gana la dedupe; `Close` colisiona con el cierre de encuestas (que gana) → cast acotado. `Assign` y
+  `Resolve` son únicos. La asignación lista co-admins por `userId` (las personas aún no exponen
+  nombre/email) y el backend responde `400` si el asignado no es admin activo (vía `friendlyMessage`).
+
 ## [0.12.0] - 2026-06-18
 
 **Panel admin — residentes y equipo** (M4): cierra la gestión de personas del detalle de la propiedad.
@@ -418,7 +447,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.9.0...v0.10.0
