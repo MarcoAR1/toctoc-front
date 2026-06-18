@@ -1,0 +1,52 @@
+import { Clock, Home, Settings } from 'lucide-react'
+import { NavLink, Outlet } from 'react-router-dom'
+
+import { Logo } from '@/components/brand/Logo'
+import { ModeToggle } from '@/components/theme/mode-toggle'
+import { cn } from '@/lib/utils'
+
+const NAV = [
+  { to: '/app', label: 'Inicio', icon: Home, end: true },
+  { to: '/app/history', label: 'Historial', icon: Clock, end: false },
+  { to: '/app/settings', label: 'Ajustes', icon: Settings, end: false },
+]
+
+/** Layout del residente: app shell mobile con navegación inferior. */
+export function ResidentLayout() {
+  return (
+    <div className="bg-background flex min-h-dvh flex-col">
+      <header className="safe-top bg-background/80 sticky top-0 z-10 flex items-center justify-between border-b px-4 py-3 backdrop-blur">
+        <div className="flex items-center gap-2">
+          <Logo className="size-7" />
+          <span className="font-semibold">TocToc</span>
+        </div>
+        <ModeToggle />
+      </header>
+
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6 pb-24">
+        <Outlet />
+      </main>
+
+      <nav className="safe-bottom bg-background/95 fixed inset-x-0 bottom-0 z-10 border-t backdrop-blur">
+        <div className="mx-auto flex max-w-lg items-stretch justify-around">
+          {NAV.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                cn(
+                  'flex flex-1 flex-col items-center gap-1 py-2 text-xs',
+                  isActive ? 'text-primary' : 'text-muted-foreground',
+                )
+              }
+            >
+              <Icon className="size-5" />
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    </div>
+  )
+}

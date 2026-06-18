@@ -1,0 +1,8762 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"SurveyType": {
+				"type": "string",
+				"enum": [
+					"single",
+					"multiple"
+				],
+				"description": "Survey — Domain Entity (contexto surveys, \"encuestas / votaciones\").\nA poll management opens to the property's residents (asambleas, decisiones de consorcio,\nconsultas). Residents cast one vote each while the survey is `open`; management `close`s\nit to freeze the result (and may `reopen`). `single` accepts one option, `multiple`\naccepts several. An `anonymous` survey tallies counts but never exposes who voted what."
+			},
+			"SurveyOption": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SurveyStatus": {
+				"type": "string",
+				"enum": [
+					"open",
+					"closed"
+				]
+			},
+			"Survey": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"createdBy": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/SurveyType"
+					},
+					"anonymous": {
+						"type": "boolean"
+					},
+					"options": {
+						"items": {
+							"$ref": "#/components/schemas/SurveyOption"
+						},
+						"type": "array"
+					},
+					"status": {
+						"$ref": "#/components/schemas/SurveyStatus"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"createdBy",
+					"title",
+					"type",
+					"anonymous",
+					"options",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateSurveyBody": {
+				"description": "HTTP body to create a survey.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/SurveyType"
+					},
+					"anonymous": {
+						"type": "boolean"
+					},
+					"options": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"propertyId",
+					"title",
+					"options"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Vote": {
+				"description": "Vote — Domain Entity (contexto surveys).\nOne ballot per (survey, voter). Re-voting while the survey is open replaces the\nprevious selection. `unitId` records the voter's unit at cast time (context/reporting).",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"surveyId": {
+						"type": "string"
+					},
+					"voterId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"optionIds": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"surveyId",
+					"voterId",
+					"optionIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CastVoteBody": {
+				"description": "HTTP body to cast a vote.",
+				"properties": {
+					"optionIds": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"optionIds"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SurveyOptionResult": {
+				"description": "Per-option tally plus the number of distinct voters.",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					},
+					"count": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"label",
+					"count"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SurveyResults": {
+				"properties": {
+					"surveyId": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/SurveyType"
+					},
+					"status": {
+						"$ref": "#/components/schemas/SurveyStatus"
+					},
+					"totalVoters": {
+						"type": "number",
+						"format": "double"
+					},
+					"options": {
+						"items": {
+							"$ref": "#/components/schemas/SurveyOptionResult"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"surveyId",
+					"type",
+					"status",
+					"totalVoters",
+					"options"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BlacklistStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"lifted"
+				],
+				"description": "BlacklistEntry — Domain Entity (contexto security).\nA person a property has banned from entering. Enforced at the door: when a pass\nis redeemed, a match (by name or email) denies access with reason `blacklisted`.\n\n- `active`  → currently enforced.\n- `lifted`  → no longer enforced (kept for audit instead of hard-deleting)."
+			},
+			"BlacklistEntry": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string",
+						"description": "Human-entered name as typed by the operator."
+					},
+					"nameNormalized": {
+						"type": "string",
+						"description": "Lowercased, whitespace-collapsed name used for matching."
+					},
+					"email": {
+						"type": "string",
+						"description": "Optional normalized email used as a secondary match key."
+					},
+					"document": {
+						"type": "string",
+						"description": "Optional national ID / document number."
+					},
+					"reason": {
+						"type": "string",
+						"description": "Why the person was blacklisted (free text)."
+					},
+					"status": {
+						"$ref": "#/components/schemas/BlacklistStatus"
+					},
+					"createdBy": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"name",
+					"nameNormalized",
+					"status",
+					"createdBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AddBlacklistBody": {
+				"description": "HTTP body to blacklist a person.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"document": {
+						"type": "string"
+					},
+					"reason": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"propertyId",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AlertKind": {
+				"type": "string",
+				"enum": [
+					"panic",
+					"mass"
+				],
+				"description": "Alert — Domain Entity (contexto security).\nAn audit record of a security broadcast. Two kinds:\n\n- `panic` → a resident pressed the panic button; staff/admins are notified.\n- `mass`  → an admin broadcasts an emergency to every resident of the property.\n\nBoth deliver push regardless of quiet hours (they are emergencies)."
+			},
+			"AlertSeverity": {
+				"type": "string",
+				"enum": [
+					"info",
+					"warning",
+					"critical"
+				]
+			},
+			"GeoPoint": {
+				"description": "A coarse geolocation attached to a panic alert (optional).",
+				"properties": {
+					"lat": {
+						"type": "number",
+						"format": "double"
+					},
+					"lng": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"lat",
+					"lng"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Alert": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/AlertKind"
+					},
+					"triggeredBy": {
+						"type": "string",
+						"description": "User id that triggered the alert."
+					},
+					"unitId": {
+						"type": "string",
+						"description": "Resident's unit for a panic alert, when known."
+					},
+					"title": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					},
+					"severity": {
+						"$ref": "#/components/schemas/AlertSeverity"
+					},
+					"recipientsCount": {
+						"type": "number",
+						"format": "double",
+						"description": "How many users were notified when the alert fired."
+					},
+					"location": {
+						"$ref": "#/components/schemas/GeoPoint"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"kind",
+					"triggeredBy",
+					"severity",
+					"recipientsCount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PanicBody": {
+				"description": "HTTP body for the panic button.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"note": {
+						"type": "string"
+					},
+					"location": {
+						"$ref": "#/components/schemas/GeoPoint"
+					}
+				},
+				"required": [
+					"propertyId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MassAlertBody": {
+				"description": "HTTP body for a property-wide mass alert.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"body": {
+						"type": "string"
+					},
+					"severity": {
+						"$ref": "#/components/schemas/AlertSeverity"
+					}
+				},
+				"required": [
+					"propertyId",
+					"title",
+					"body"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RingReason": {
+				"type": "string",
+				"enum": [
+					"visit",
+					"delivery",
+					"service"
+				],
+				"description": "Ring — Domain Entity (contexto rings).\nA doorbell event raised by an (unauthenticated) visitor towards a Unit.\nState machine: ringing -> answered | rejected | timeout | cancelled."
+			},
+			"RingStatus": {
+				"type": "string",
+				"enum": [
+					"ringing",
+					"answered",
+					"rejected",
+					"timeout",
+					"cancelled"
+				]
+			},
+			"Ring": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"reason": {
+						"$ref": "#/components/schemas/RingReason"
+					},
+					"status": {
+						"$ref": "#/components/schemas/RingStatus"
+					},
+					"visitorName": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					},
+					"photoUrl": {
+						"type": "string"
+					},
+					"answeredBy": {
+						"type": "string",
+						"description": "Resident/admin userId that answered or rejected."
+					},
+					"resolvedAt": {
+						"type": "string",
+						"format": "date-time",
+						"description": "When it left the `ringing` state."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"unitId",
+					"reason",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PhotoUpload": {
+				"description": "Outbound port (DOMAIN layer) for persisting the visitor's photo.\nProvider-agnostic: an in-memory adapter in dev/test, object storage\n(S3, Cloudinary, GCS, etc.) in prod. The domain never imports an SDK.",
+				"properties": {
+					"data": {
+						"type": "string",
+						"description": "Base64-encoded image bytes."
+					},
+					"contentType": {
+						"type": "string",
+						"description": "MIME type, e.g. `image/jpeg`."
+					}
+				},
+				"required": [
+					"data",
+					"contentType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RingInput": {
+				"description": "Visitor input to raise a ring (public; the photo is uploaded inline).",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"reason": {
+						"$ref": "#/components/schemas/RingReason"
+					},
+					"visitorName": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					},
+					"photo": {
+						"$ref": "#/components/schemas/PhotoUpload"
+					}
+				},
+				"required": [
+					"unitId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PropertyType": {
+				"type": "string",
+				"enum": [
+					"building",
+					"house",
+					"duplex",
+					"complex"
+				],
+				"description": "Property — Domain Entity (contexto properties).\nA directionable place visitors arrive to. Generalizes building/house/duplex/complex\nso the same backend serves every kind of dwelling."
+			},
+			"Address": {
+				"properties": {
+					"street": {
+						"type": "string"
+					},
+					"number": {
+						"type": "string"
+					},
+					"city": {
+						"type": "string"
+					},
+					"state": {
+						"type": "string"
+					},
+					"country": {
+						"type": "string"
+					},
+					"zip": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PropertyStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"disabled"
+				]
+			},
+			"DirectoryVisibility": {
+				"type": "string",
+				"enum": [
+					"listed",
+					"code_only"
+				],
+				"description": "Who appears in the public directory after scanning the QR.\n- listed: visitors can pick a unit from the directory.\n- code_only: directory stays hidden; the visitor must know the unit code."
+			},
+			"Property": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/PropertyType"
+					},
+					"name": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string",
+						"description": "Public short code embedded in the QR (unique)."
+					},
+					"address": {
+						"$ref": "#/components/schemas/Address"
+					},
+					"status": {
+						"$ref": "#/components/schemas/PropertyStatus"
+					},
+					"directoryVisibility": {
+						"$ref": "#/components/schemas/DirectoryVisibility",
+						"description": "Whether units are listed in the public directory."
+					},
+					"createdBy": {
+						"type": "string",
+						"description": "User id of the admin that created/owns the property."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"type",
+					"name",
+					"code",
+					"status",
+					"directoryVisibility",
+					"createdBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatePropertyInput": {
+				"properties": {
+					"type": {
+						"$ref": "#/components/schemas/PropertyType"
+					},
+					"name": {
+						"type": "string"
+					},
+					"address": {
+						"$ref": "#/components/schemas/Address"
+					},
+					"directoryVisibility": {
+						"$ref": "#/components/schemas/DirectoryVisibility"
+					}
+				},
+				"required": [
+					"type",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DirectoryUnit": {
+				"description": "Read model returned to the (unauthenticated) visitor after scanning the QR:\nthe property plus the list of active units to choose from.",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					},
+					"directoryName": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PropertyDirectory": {
+				"properties": {
+					"property": {
+						"properties": {
+							"directoryVisibility": {
+								"$ref": "#/components/schemas/DirectoryVisibility"
+							},
+							"code": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"type": {
+								"$ref": "#/components/schemas/PropertyType"
+							},
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"directoryVisibility",
+							"code",
+							"name",
+							"type",
+							"id"
+						],
+						"type": "object"
+					},
+					"units": {
+						"items": {
+							"$ref": "#/components/schemas/DirectoryUnit"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"property",
+					"units"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdatePropertyInput": {
+				"description": "Partial patch accepted by the panel to edit a property.",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"directoryVisibility": {
+						"$ref": "#/components/schemas/DirectoryVisibility"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PropertyQr": {
+				"description": "Shareable QR payload for a property: the public code and the deep-link URL.",
+				"properties": {
+					"code": {
+						"type": "string"
+					},
+					"url": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"code",
+					"url"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UnitStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"disabled"
+				],
+				"description": "Unit — Domain Entity (contexto properties).\nA unit inside a Property (e.g. \"4B\", \"Casa\"). A house has 1 unit; a building, many."
+			},
+			"Unit": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string",
+						"description": "What the visitor sees in the directory (e.g. \"4B\")."
+					},
+					"code": {
+						"type": "string",
+						"description": "Optional code for direct-to-unit QR/ring."
+					},
+					"directoryName": {
+						"type": "string",
+						"description": "Optional alias shown in the directory (e.g. \"Familia Pérez\")."
+					},
+					"status": {
+						"$ref": "#/components/schemas/UnitStatus"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"label",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateUnitInput": {
+				"properties": {
+					"label": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"directoryName": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BulkCreateUnitsInput": {
+				"description": "Bulk unit creation payload for the panel.",
+				"properties": {
+					"units": {
+						"items": {
+							"$ref": "#/components/schemas/CreateUnitInput"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"units"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PaginatedUnits": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/Unit"
+						},
+						"type": "array"
+					},
+					"total": {
+						"type": "number",
+						"format": "double"
+					},
+					"page": {
+						"type": "number",
+						"format": "double"
+					},
+					"limit": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"items",
+					"total",
+					"page",
+					"limit"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PropertyAdminRole": {
+				"type": "string",
+				"enum": [
+					"owner",
+					"manager",
+					"concierge"
+				],
+				"description": "PropertyAdmin — Domain Entity (contexto properties).\nQuién puede gestionar una propiedad. A diferencia de Membership (residentes de una\nunidad), esto es a nivel propiedad y con roles de gestión.\n\n- owner: el creador. Control total, incluye gestionar admins. No se puede revocar.\n- manager (administrador): gestiona unidades, residentes y ajustes.\n- concierge (encargado): operativo (timbres/aperturas); NO gestiona ajustes ni admins."
+			},
+			"PropertyAdminStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"invited",
+					"revoked"
+				]
+			},
+			"PropertyAdmin": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"userId": {
+						"type": "string"
+					},
+					"role": {
+						"$ref": "#/components/schemas/PropertyAdminRole"
+					},
+					"status": {
+						"$ref": "#/components/schemas/PropertyAdminStatus"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"userId",
+					"role",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ManageableAdminRole": {
+				"type": "string",
+				"enum": [
+					"manager",
+					"concierge"
+				],
+				"description": "Roles que se pueden asignar a un co-admin (owner queda reservado al creador)."
+			},
+			"AddPropertyAdminInput": {
+				"properties": {
+					"userId": {
+						"type": "string"
+					},
+					"role": {
+						"$ref": "#/components/schemas/ManageableAdminRole"
+					}
+				},
+				"required": [
+					"userId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MembershipRole": {
+				"type": "string",
+				"enum": [
+					"owner",
+					"tenant",
+					"family",
+					"admin"
+				],
+				"description": "Membership — Domain Entity (contexto properties).\nLinks a User to a Unit with a role. Used to know who to notify when a Unit is rung."
+			},
+			"MembershipStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"invited",
+					"revoked"
+				]
+			},
+			"Membership": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"userId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"role": {
+						"$ref": "#/components/schemas/MembershipRole"
+					},
+					"status": {
+						"$ref": "#/components/schemas/MembershipStatus"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"userId",
+					"unitId",
+					"role",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateMembershipInput": {
+				"properties": {
+					"userId": {
+						"type": "string"
+					},
+					"role": {
+						"$ref": "#/components/schemas/MembershipRole"
+					}
+				},
+				"required": [
+					"userId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AccessPassKind": {
+				"type": "string",
+				"enum": [
+					"guest",
+					"staff"
+				],
+				"description": "AccessPass — Domain Entity (contexto passes).\nA time-boxed, optionally recurring authorization for a named person to access a\nproperty (and optionally a specific unit). It is the shared primitive behind both\nresident-invited GUESTS (e.g. a cleaner every Monday) and management-invited STAFF.\nThe holder presents the `code` at the door; the pass is only redeemable while it is\nwithin its validity period AND (when recurring) inside an active occurrence window.\n\nRecurrence times are interpreted in UTC (a property-timezone refinement is future work)."
+			},
+			"AccessPassStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"revoked",
+					"expired"
+				]
+			},
+			"RecurrenceRule": {
+				"description": "Weekly recurrence rule (MVP). Absent on a pass ⇒ continuously valid within its window.",
+				"properties": {
+					"frequency": {
+						"type": "string",
+						"enum": [
+							"weekly"
+						],
+						"nullable": false
+					},
+					"interval": {
+						"type": "number",
+						"format": "double",
+						"description": "Every N weeks, anchored at the pass `validFrom`. Default 1 (every week)."
+					},
+					"byWeekday": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array",
+						"description": "Days the pass is valid: 0=Sunday … 6=Saturday (UTC `getUTCDay`)."
+					},
+					"startTime": {
+						"type": "string",
+						"description": "Occurrence start time, 'HH:mm' (UTC, inclusive)."
+					},
+					"endTime": {
+						"type": "string",
+						"description": "Occurrence end time, 'HH:mm' (UTC, exclusive)."
+					}
+				},
+				"required": [
+					"frequency",
+					"byWeekday",
+					"startTime",
+					"endTime"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AccessPass": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string",
+						"description": "Set for unit-scoped passes (a resident's guest); absent ⇒ property-wide (staff)."
+					},
+					"kind": {
+						"$ref": "#/components/schemas/AccessPassKind"
+					},
+					"subjectName": {
+						"type": "string"
+					},
+					"subjectEmail": {
+						"type": "string"
+					},
+					"purpose": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string",
+						"description": "Redeemable, human-friendly code presented at the door. Unique."
+					},
+					"status": {
+						"$ref": "#/components/schemas/AccessPassStatus"
+					},
+					"validFrom": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"validUntil": {
+						"type": "string",
+						"format": "date-time",
+						"description": "Overall expiry. Absent ⇒ open-ended (bounded only by recurrence/revocation)."
+					},
+					"recurrence": {
+						"$ref": "#/components/schemas/RecurrenceRule"
+					},
+					"createdBy": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"kind",
+					"subjectName",
+					"code",
+					"status",
+					"validFrom",
+					"createdBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateGuestPassBody": {
+				"description": "HTTP body for `POST /passes` (a guest pass scoped to a unit).",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"subjectName": {
+						"type": "string"
+					},
+					"subjectEmail": {
+						"type": "string"
+					},
+					"purpose": {
+						"type": "string"
+					},
+					"validFrom": {
+						"type": "string"
+					},
+					"validUntil": {
+						"type": "string"
+					},
+					"recurrence": {
+						"$ref": "#/components/schemas/RecurrenceRule"
+					}
+				},
+				"required": [
+					"unitId",
+					"subjectName",
+					"validFrom"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateStaffPassBody": {
+				"description": "HTTP body for `POST /passes/staff`. Provide `unitId` (domestic) OR `propertyId` (building).",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"subjectName": {
+						"type": "string"
+					},
+					"subjectEmail": {
+						"type": "string"
+					},
+					"purpose": {
+						"type": "string"
+					},
+					"validFrom": {
+						"type": "string"
+					},
+					"validUntil": {
+						"type": "string"
+					},
+					"recurrence": {
+						"$ref": "#/components/schemas/RecurrenceRule"
+					}
+				},
+				"required": [
+					"subjectName"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PassDenyReason": {
+				"type": "string",
+				"enum": [
+					"revoked",
+					"not_started",
+					"expired",
+					"outside_window",
+					"blacklisted"
+				],
+				"description": "Why a redemption was denied (a structured decision rather than an exception)."
+			},
+			"PassRedemption": {
+				"properties": {
+					"allowed": {
+						"type": "boolean"
+					},
+					"reason": {
+						"$ref": "#/components/schemas/PassDenyReason"
+					},
+					"pass": {
+						"$ref": "#/components/schemas/AccessPass"
+					},
+					"at": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"allowed",
+					"pass",
+					"at"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RedeemPassBody": {
+				"description": "HTTP body for `POST /passes/redeem`.",
+				"properties": {
+					"code": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"code"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ParcelStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"picked_up",
+					"returned"
+				],
+				"description": "Parcel — Domain Entity (contexto parcels, \"registro de paquetes\").\nA package received at the front desk for a unit. The concierge logs it; residents\nare notified and pick it up (in-app or by showing a short pickup code at the desk).\nState machine: pending -> picked_up | returned. Deliveries/pickups are mirrored in\nthe building activity log (access bitácora)."
+			},
+			"ParcelPickupMethod": {
+				"type": "string",
+				"enum": [
+					"app",
+					"code"
+				]
+			},
+			"Parcel": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"courier": {
+						"type": "string",
+						"description": "Carrier/courier, e.g. \"Andreani\", \"Correo Argentino\", \"MercadoLibre\"."
+					},
+					"description": {
+						"type": "string"
+					},
+					"photoUrl": {
+						"type": "string"
+					},
+					"location": {
+						"type": "string",
+						"description": "Where the parcel is stored, e.g. \"Casillero Lobby · A1\". Front desk when absent."
+					},
+					"pickupCode": {
+						"type": "string",
+						"description": "Short code the resident shows at the desk to pick the parcel up."
+					},
+					"status": {
+						"$ref": "#/components/schemas/ParcelStatus"
+					},
+					"receivedBy": {
+						"type": "string",
+						"description": "Concierge/admin userId that logged the parcel."
+					},
+					"pickedUpBy": {
+						"type": "string",
+						"description": "userId that took the parcel (resident in-app, or the verifier when redeemed by code)."
+					},
+					"pickedUpVia": {
+						"$ref": "#/components/schemas/ParcelPickupMethod"
+					},
+					"pickedUpAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"remindAfter": {
+						"type": "string",
+						"format": "date-time",
+						"description": "When a still-pending parcel becomes eligible for an \"uncollected\" reminder."
+					},
+					"reminded": {
+						"type": "boolean",
+						"description": "Whether the uncollected reminder was already sent (avoids re-notifying)."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"unitId",
+					"pickupCode",
+					"status",
+					"receivedBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegisterParcelBody": {
+				"description": "HTTP body for `POST /parcels`.",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"courier": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"photo": {
+						"$ref": "#/components/schemas/PhotoUpload"
+					},
+					"remindAfterHours": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"unitId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RedeemParcelBody": {
+				"description": "HTTP body for `POST /parcels/redeem` (pickup by code at the desk).",
+				"properties": {
+					"code": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"code"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CompartmentSize": {
+				"type": "string",
+				"enum": [
+					"small",
+					"medium",
+					"large"
+				],
+				"description": "LockerCompartment — Domain Entity (contexto lockers).\nA single door inside a locker bank. A parcel is deposited into a FREE compartment,\nwhich becomes OCCUPIED and holds the parcel until the resident opens it by code.\n`driverRef` is the opaque handle the access door driver uses to open this exact door."
+			},
+			"CompartmentStatus": {
+				"type": "string",
+				"enum": [
+					"free",
+					"occupied",
+					"disabled"
+				]
+			},
+			"LockerCompartment": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"lockerId": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string",
+						"description": "Denormalized from the parent locker for property-scoped queries and authz."
+					},
+					"label": {
+						"type": "string",
+						"description": "Door label within the bank, e.g. \"A1\". Unique per locker."
+					},
+					"size": {
+						"$ref": "#/components/schemas/CompartmentSize"
+					},
+					"status": {
+						"$ref": "#/components/schemas/CompartmentStatus"
+					},
+					"driverRef": {
+						"type": "string",
+						"description": "Opaque reference the door driver uses to open this compartment."
+					},
+					"parcelId": {
+						"type": "string",
+						"description": "Parcel currently stored inside (present while OCCUPIED)."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"lockerId",
+					"propertyId",
+					"label",
+					"size",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LockerStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"disabled"
+				],
+				"description": "Locker — Domain Entity (contexto lockers, \"casilleros inteligentes\").\nA locker bank/cabinet at a property, made up of compartments. The concierge deposits a\nparcel into a free compartment (reusing the parcel pickup code); the resident opens that\ncompartment by code via the access door driver and the parcel is marked picked up."
+			},
+			"LockerWithCompartments": {
+				"description": "A locker together with its compartments (read model for the panel).",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string",
+						"description": "Bank label, e.g. \"Lobby\" or \"Subsuelo\"."
+					},
+					"status": {
+						"$ref": "#/components/schemas/LockerStatus"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"compartments": {
+						"items": {
+							"$ref": "#/components/schemas/LockerCompartment"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"name",
+					"status",
+					"compartments"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateCompartmentInput": {
+				"description": "Input to provision a compartment (size defaults to 'medium').",
+				"properties": {
+					"label": {
+						"type": "string"
+					},
+					"size": {
+						"$ref": "#/components/schemas/CompartmentSize"
+					},
+					"driverRef": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateLockerBody": {
+				"description": "HTTP body for `POST /lockers`.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"compartments": {
+						"items": {
+							"$ref": "#/components/schemas/CreateCompartmentInput"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"propertyId",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AddCompartmentBody": {
+				"description": "HTTP body for `POST /lockers/{lockerId}/compartments`.",
+				"properties": {
+					"label": {
+						"type": "string"
+					},
+					"size": {
+						"$ref": "#/components/schemas/CompartmentSize"
+					},
+					"driverRef": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"label"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LockerDepositResult": {
+				"description": "Result of a deposit: the created parcel and the compartment now holding it.",
+				"properties": {
+					"parcel": {
+						"$ref": "#/components/schemas/Parcel"
+					},
+					"compartment": {
+						"$ref": "#/components/schemas/LockerCompartment"
+					}
+				},
+				"required": [
+					"parcel",
+					"compartment"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DepositParcelBody": {
+				"description": "HTTP body for `POST /lockers/deposit`.",
+				"properties": {
+					"lockerId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"size": {
+						"$ref": "#/components/schemas/CompartmentSize"
+					},
+					"courier": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"remindAfterHours": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"lockerId",
+					"unitId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LockerPickupResult": {
+				"description": "Result of a pickup: the picked-up parcel and the freed compartment.",
+				"properties": {
+					"parcel": {
+						"$ref": "#/components/schemas/Parcel"
+					},
+					"compartment": {
+						"$ref": "#/components/schemas/LockerCompartment"
+					}
+				},
+				"required": [
+					"parcel",
+					"compartment"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OpenCompartmentBody": {
+				"description": "HTTP body for `POST /lockers/open` (resident opens their compartment by code).",
+				"properties": {
+					"code": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"code"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"InvitationType": {
+				"type": "string",
+				"enum": [
+					"unit_resident",
+					"property_admin"
+				],
+				"description": "Invitation — Domain Entity (contexto invitations).\nAn email-based, single-use invite to either become a resident of a Unit\n(`unit_resident`) or a co-admin of a Property (`property_admin`).\nOnly the HASH of the token is stored; the raw token travels in the email link."
+			},
+			"InvitationStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"accepted",
+					"revoked"
+				]
+			},
+			"Invitation": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/InvitationType"
+					},
+					"unitId": {
+						"type": "string",
+						"description": "Set when `type === 'unit_resident'`."
+					},
+					"membershipRole": {
+						"$ref": "#/components/schemas/MembershipRole",
+						"description": "Role granted on accept for a resident invite (default `tenant`)."
+					},
+					"adminRole": {
+						"$ref": "#/components/schemas/PropertyAdminRole",
+						"description": "Role granted on accept for a co-admin invite (default `manager`)."
+					},
+					"status": {
+						"$ref": "#/components/schemas/InvitationStatus"
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"invitedBy": {
+						"type": "string"
+					},
+					"acceptedBy": {
+						"type": "string"
+					},
+					"acceptedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"email",
+					"propertyId",
+					"type",
+					"status",
+					"expiresAt",
+					"invitedBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateResidentInvitationBody": {
+				"description": "HTTP body to invite a resident (route is not nested under the unit).",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"role": {
+						"$ref": "#/components/schemas/MembershipRole"
+					}
+				},
+				"required": [
+					"unitId",
+					"email"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateAdminInvitationBody": {
+				"description": "HTTP body to invite a co-admin (route is not nested under the property).",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"role": {
+						"$ref": "#/components/schemas/ManageableAdminRole"
+					}
+				},
+				"required": [
+					"propertyId",
+					"email"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UserStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"disabled"
+				],
+				"description": "User — Domain Entity (contexto identity).\nPure business type. NO framework imports."
+			},
+			"User": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"status": {
+						"$ref": "#/components/schemas/UserStatus"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"email",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AcceptInvitationResult": {
+				"properties": {
+					"accessToken": {
+						"type": "string"
+					},
+					"user": {
+						"$ref": "#/components/schemas/User"
+					},
+					"invitation": {
+						"$ref": "#/components/schemas/Invitation"
+					}
+				},
+				"required": [
+					"accessToken",
+					"user",
+					"invitation"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AcceptInvitationInput": {
+				"description": "Body for the public self-claim endpoint.",
+				"properties": {
+					"token": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DevicePlatform": {
+				"type": "string",
+				"enum": [
+					"ios",
+					"android",
+					"web"
+				],
+				"description": "Device — Domain Entity (contexto identity).\nA user's device + its push token (FCM), used to deliver notifications."
+			},
+			"Device": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"userId": {
+						"type": "string"
+					},
+					"platform": {
+						"$ref": "#/components/schemas/DevicePlatform"
+					},
+					"pushToken": {
+						"type": "string"
+					},
+					"lastSeenAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"userId",
+					"platform",
+					"pushToken"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegisterDeviceRequest": {
+				"properties": {
+					"platform": {
+						"$ref": "#/components/schemas/DevicePlatform"
+					},
+					"pushToken": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"platform",
+					"pushToken"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MagicLinkRequest": {
+				"properties": {
+					"email": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"email"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuthResult": {
+				"properties": {
+					"accessToken": {
+						"type": "string"
+					},
+					"user": {
+						"$ref": "#/components/schemas/User"
+					}
+				},
+				"required": [
+					"accessToken",
+					"user"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VerifyRequest": {
+				"properties": {
+					"token": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"token"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"HealthStatus": {
+				"properties": {
+					"env": {
+						"type": "string",
+						"enum": [
+							"local",
+							"production",
+							"development",
+							"staging"
+						]
+					},
+					"status": {
+						"type": "string",
+						"default": "ok"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReadinessStatus": {
+				"description": "Readiness probe payload. Unlike liveness (`/health/status`), readiness reflects whether\nthe app can actually serve traffic — i.e. its critical dependency (MongoDB) is connected.",
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"ok",
+							"unavailable"
+						],
+						"default": "unavailable"
+					},
+					"mongo": {
+						"type": "string",
+						"enum": [
+							"up",
+							"down"
+						],
+						"default": "down"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ExpensePeriodStatus": {
+				"type": "string",
+				"enum": [
+					"draft",
+					"published",
+					"closed"
+				],
+				"description": "ExpensePeriod — Domain Entity (contexto expenses, \"expensas\").\nA billing cycle for a property (typically a month). Management prepares charges while the\nperiod is `draft`, `publish`es it so residents can see and pay, and `close`s it to freeze."
+			},
+			"ExpensePeriod": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string",
+						"description": "Human label, e.g. \"Junio 2026\"."
+					},
+					"period": {
+						"type": "string",
+						"description": "Machine period, `YYYY-MM`."
+					},
+					"status": {
+						"$ref": "#/components/schemas/ExpensePeriodStatus"
+					},
+					"dueDate": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"createdBy": {
+						"type": "string"
+					},
+					"publishedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"label",
+					"period",
+					"status",
+					"createdBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatePeriodBody": {
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					},
+					"period": {
+						"type": "string"
+					},
+					"dueDate": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"propertyId",
+					"label",
+					"period"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ExpenseChargeItem": {
+				"properties": {
+					"concept": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"concept",
+					"amount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChargeStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"partial",
+					"paid"
+				],
+				"description": "ExpenseCharge — Domain Entity (contexto expenses).\nWhat a single unit owes for a period. `amountDue` always ends in the unit's stable\n`paymentCents` code (0..99) so an incoming bank transfer can be matched back to the unit\nby its cents (see domain/services/reconciliation.ts)."
+			},
+			"ExpenseCharge": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"periodId": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ExpenseChargeItem"
+						},
+						"type": "array"
+					},
+					"baseAmount": {
+						"type": "number",
+						"format": "double",
+						"description": "Intended charge (whole pesos own the integer part)."
+					},
+					"paymentCents": {
+						"type": "number",
+						"format": "double",
+						"description": "Stable per-unit reconciliation code, 0..99 (the cents the resident must pay)."
+					},
+					"amountDue": {
+						"type": "number",
+						"format": "double",
+						"description": "What the resident must transfer: `floor(baseAmount) + paymentCents/100`."
+					},
+					"paidAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/ChargeStatus"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"periodId",
+					"propertyId",
+					"unitId",
+					"items",
+					"baseAmount",
+					"paymentCents",
+					"amountDue",
+					"paidAmount",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChargeItemInput": {
+				"properties": {
+					"concept": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"concept",
+					"amount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AddChargeBody": {
+				"description": "Add/replace one unit's charge in a draft period (`amount` OR `items`).",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ChargeItemInput"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"unitId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GenerateChargesBody": {
+				"description": "Generate the same charge for every active unit without one yet.",
+				"properties": {
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ChargeItemInput"
+						},
+						"type": "array"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UnitChargesSummary": {
+				"description": "A resident's account view for a property.",
+				"properties": {
+					"charges": {
+						"items": {
+							"$ref": "#/components/schemas/ExpenseCharge"
+						},
+						"type": "array"
+					},
+					"totalDue": {
+						"type": "number",
+						"format": "double"
+					},
+					"totalPaid": {
+						"type": "number",
+						"format": "double"
+					},
+					"balance": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"charges",
+					"totalDue",
+					"totalPaid",
+					"balance"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PaymentSource": {
+				"type": "string",
+				"enum": [
+					"manual",
+					"bank"
+				],
+				"description": "Payment — Domain Entity (contexto expenses).\nA payment applied to a charge. `manual` = recorded by an admin; `bank` = matched from a\nbank movement via the cents reconciliation."
+			},
+			"Payment": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"chargeId": {
+						"type": "string"
+					},
+					"periodId": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"source": {
+						"$ref": "#/components/schemas/PaymentSource"
+					},
+					"reference": {
+						"type": "string"
+					},
+					"paidAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"registeredBy": {
+						"type": "string",
+						"description": "Admin who recorded a manual payment."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"chargeId",
+					"periodId",
+					"propertyId",
+					"unitId",
+					"amount",
+					"source",
+					"paidAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PaymentResult": {
+				"description": "Result of applying a payment: the created payment plus the updated charge.",
+				"properties": {
+					"payment": {
+						"$ref": "#/components/schemas/Payment"
+					},
+					"charge": {
+						"$ref": "#/components/schemas/ExpenseCharge"
+					}
+				},
+				"required": [
+					"payment",
+					"charge"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegisterPaymentBody": {
+				"properties": {
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"paidAt": {
+						"type": "string"
+					},
+					"reference": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"amount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReconcileResult": {
+				"description": "Outcome of trying to match a bank movement to a unit by its cents code.",
+				"properties": {
+					"matched": {
+						"type": "boolean"
+					},
+					"cents": {
+						"type": "number",
+						"format": "double",
+						"description": "The cents extracted from the movement amount."
+					},
+					"reason": {
+						"type": "string",
+						"enum": [
+							"no_open_charge_for_cents",
+							"charge_not_payable"
+						],
+						"description": "Why it did not match, when `matched` is false."
+					},
+					"charge": {
+						"$ref": "#/components/schemas/ExpenseCharge"
+					},
+					"payment": {
+						"$ref": "#/components/schemas/Payment"
+					}
+				},
+				"required": [
+					"matched",
+					"cents"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ReconcileMovementBody": {
+				"description": "HTTP body to reconcile a single bank movement against the property's open charges.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"paidAt": {
+						"type": "string"
+					},
+					"reference": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"propertyId",
+					"amount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"QuietHours": {
+				"description": "QuietHours — Domain Entity (contexto dnd, \"no molestar\").\nPer-unit quiet-hours schedule. While active, doorbell (ring) PUSH notifications are\nsuppressed for the unit's residents; the ring is still recorded and emitted in realtime\n(an open app still sees it). Times are interpreted in UTC (property-timezone is future work).\n\nThe window may wrap past midnight: `startTime` > `endTime` means e.g. 22:00 → 07:00.",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"enabled": {
+						"type": "boolean"
+					},
+					"startTime": {
+						"type": "string",
+						"description": "Window start, 'HH:mm' (UTC, inclusive)."
+					},
+					"endTime": {
+						"type": "string",
+						"description": "Window end, 'HH:mm' (UTC, exclusive)."
+					},
+					"byWeekday": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array",
+						"description": "Days the window applies: 0=Sunday … 6=Saturday (UTC). Absent/empty ⇒ every day."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"unitId",
+					"enabled",
+					"startTime",
+					"endTime"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SetQuietHoursBody": {
+				"description": "HTTP body for `PUT /dnd`.",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"enabled": {
+						"type": "boolean"
+					},
+					"startTime": {
+						"type": "string"
+					},
+					"endTime": {
+						"type": "string"
+					},
+					"byWeekday": {
+						"items": {
+							"type": "number",
+							"format": "double"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"unitId",
+					"enabled",
+					"startTime",
+					"endTime"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ClaimCategory": {
+				"type": "string",
+				"enum": [
+					"maintenance",
+					"noise",
+					"security",
+					"cleaning",
+					"billing",
+					"other"
+				],
+				"description": "Claim — Domain Entity (contexto claims, \"reclamos / tickets\").\nA support ticket a resident files to building management about an issue (maintenance,\nnoise, security...). Management triages it through a small workflow:\n\n  open ──▶ in_progress ──▶ resolved ──▶ closed\n    └──────────┴──▶ cancelled            (resolved/closed can be reopened → in_progress)\n\n`closed` and `cancelled` are terminal except that a `resolved`/`closed` claim may be\nreopened if the resident is not satisfied."
+			},
+			"ClaimPriority": {
+				"type": "string",
+				"enum": [
+					"low",
+					"medium",
+					"high"
+				]
+			},
+			"ClaimStatus": {
+				"type": "string",
+				"enum": [
+					"open",
+					"in_progress",
+					"resolved",
+					"closed",
+					"cancelled"
+				]
+			},
+			"Claim": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"filedBy": {
+						"type": "string"
+					},
+					"category": {
+						"$ref": "#/components/schemas/ClaimCategory"
+					},
+					"subject": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"priority": {
+						"$ref": "#/components/schemas/ClaimPriority"
+					},
+					"status": {
+						"$ref": "#/components/schemas/ClaimStatus"
+					},
+					"assignedTo": {
+						"type": "string"
+					},
+					"resolution": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"unitId",
+					"filedBy",
+					"category",
+					"subject",
+					"description",
+					"priority",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateClaimBody": {
+				"description": "HTTP body to file a claim.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"category": {
+						"$ref": "#/components/schemas/ClaimCategory"
+					},
+					"subject": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"priority": {
+						"$ref": "#/components/schemas/ClaimPriority"
+					}
+				},
+				"required": [
+					"propertyId",
+					"unitId",
+					"subject",
+					"description"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AssignClaimBody": {
+				"description": "HTTP body to assign a claim to a property admin.",
+				"properties": {
+					"assigneeUserId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"assigneeUserId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ResolveClaimBody": {
+				"description": "HTTP body to resolve a claim.",
+				"properties": {
+					"resolution": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ClaimComment": {
+				"description": "ClaimComment — Domain Entity (contexto claims).\nA message on a claim's thread. `internal` notes are visible only to property admins\n(staff handover), while public comments are part of the conversation with the resident.",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"claimId": {
+						"type": "string"
+					},
+					"authorId": {
+						"type": "string"
+					},
+					"body": {
+						"type": "string"
+					},
+					"internal": {
+						"type": "boolean"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"claimId",
+					"authorId",
+					"body",
+					"internal"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AddClaimCommentBody": {
+				"description": "Application input / HTTP body to post a comment on a claim.",
+				"properties": {
+					"body": {
+						"type": "string"
+					},
+					"internal": {
+						"type": "boolean",
+						"description": "Admin-only: when true the note is internal (residents never see it). Ignored for residents."
+					}
+				},
+				"required": [
+					"body"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConversationKind": {
+				"type": "string",
+				"enum": [
+					"unit_staff",
+					"direct"
+				],
+				"description": "Conversation — Domain Entity (contexto chat).\nA messaging thread inside a property. Two kinds:\n- `unit_staff`: a unit's residents ↔ the building staff (concierge + management). One\n  per unit (singleton); participants are resolved dynamically (current residents + admins).\n- `direct`: a 1:1 thread between two affiliated users (e.g. an admin and a resident)."
+			},
+			"Conversation": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/ConversationKind"
+					},
+					"unitId": {
+						"type": "string",
+						"description": "Set for `unit_staff`."
+					},
+					"memberIds": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "The two user ids for `direct`; empty for `unit_staff` (resolved dynamically)."
+					},
+					"subject": {
+						"type": "string"
+					},
+					"lastMessageAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"lastMessagePreview": {
+						"type": "string"
+					},
+					"lastSenderId": {
+						"type": "string"
+					},
+					"createdBy": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"kind",
+					"memberIds",
+					"createdBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"StartConversationBody": {
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/ConversationKind"
+					},
+					"unitId": {
+						"type": "string",
+						"description": "Required when `kind` is `unit_staff`."
+					},
+					"targetUserId": {
+						"type": "string",
+						"description": "Required when `kind` is `direct`."
+					},
+					"subject": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"propertyId",
+					"kind"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConversationSummary": {
+				"description": "Conversation enriched with the caller's unread count (list view).",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/ConversationKind"
+					},
+					"unitId": {
+						"type": "string",
+						"description": "Set for `unit_staff`."
+					},
+					"memberIds": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "The two user ids for `direct`; empty for `unit_staff` (resolved dynamically)."
+					},
+					"subject": {
+						"type": "string"
+					},
+					"lastMessageAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"lastMessagePreview": {
+						"type": "string"
+					},
+					"lastSenderId": {
+						"type": "string"
+					},
+					"createdBy": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"unreadCount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"kind",
+					"memberIds",
+					"createdBy",
+					"unreadCount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Message": {
+				"description": "Message — Domain Entity (contexto chat). A single text message in a conversation.",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"conversationId": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"senderId": {
+						"type": "string"
+					},
+					"body": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"conversationId",
+					"propertyId",
+					"senderId",
+					"body",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MessagePage": {
+				"description": "A page of messages, newest-first, with a cursor hint.",
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/Message"
+						},
+						"type": "array"
+					},
+					"hasMore": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"items",
+					"hasMore"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SendMessageBody": {
+				"properties": {
+					"body": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"body"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"MarkReadResult": {
+				"properties": {
+					"unreadCount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"unreadCount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CallMedia": {
+				"type": "string",
+				"enum": [
+					"audio",
+					"video"
+				]
+			},
+			"CallInitiatorKind": {
+				"type": "string",
+				"enum": [
+					"user",
+					"visitor"
+				],
+				"description": "Who placed the call: an authenticated user, or an anonymous door visitor (no account)."
+			},
+			"CallStatus": {
+				"type": "string",
+				"enum": [
+					"ringing",
+					"active",
+					"ended"
+				],
+				"description": "CallSession — Domain Entity (contexto calls).\nA live audio/video call (WebRTC) towards a unit: an authenticated user calls a unit, its\nactive residents are notified, and the first to accept becomes the connected peer. The\nserver only relays signaling (SDP offer/answer + ICE candidates); media flows peer-to-peer.\n\nState machine: ringing -> active -> ended  (or ringing -> ended)."
+			},
+			"CallEndReason": {
+				"type": "string",
+				"enum": [
+					"completed",
+					"rejected",
+					"canceled",
+					"missed",
+					"failed"
+				]
+			},
+			"CallSession": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"ringId": {
+						"type": "string",
+						"description": "Soft, opaque link to a `rings` doorbell event (not validated against that context)."
+					},
+					"media": {
+						"$ref": "#/components/schemas/CallMedia"
+					},
+					"initiatorKind": {
+						"$ref": "#/components/schemas/CallInitiatorKind",
+						"description": "Whether the caller is an authenticated resident/admin or an anonymous door visitor."
+					},
+					"initiatorId": {
+						"type": "string",
+						"description": "The caller: an authenticated userId, or the synthetic id of a door visitor (`visitor:<ringId>`)."
+					},
+					"initiatorLabel": {
+						"type": "string",
+						"description": "Display name of the caller when it is an anonymous visitor (carried from the ring)."
+					},
+					"status": {
+						"$ref": "#/components/schemas/CallStatus"
+					},
+					"answeredBy": {
+						"type": "string",
+						"description": "Resident who accepted — the connected peer."
+					},
+					"endReason": {
+						"$ref": "#/components/schemas/CallEndReason"
+					},
+					"offer": {
+						"type": "string",
+						"description": "Latest SDP offer (from the initiator), kept so a peer can fetch it on (re)connect."
+					},
+					"answer": {
+						"type": "string",
+						"description": "Latest SDP answer (from the answerer)."
+					},
+					"startedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"answeredAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"endedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"unitId",
+					"media",
+					"initiatorKind",
+					"initiatorId",
+					"status",
+					"startedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"StartCallBody": {
+				"description": "Caller starts a call towards a unit, providing its initial SDP offer.",
+				"properties": {
+					"unitId": {
+						"type": "string"
+					},
+					"media": {
+						"$ref": "#/components/schemas/CallMedia"
+					},
+					"sdpOffer": {
+						"type": "string"
+					},
+					"ringId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"unitId",
+					"media",
+					"sdpOffer"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VisitorCallToken": {
+				"description": "A short-lived bearer token authorizing a door visitor to place a live call to their unit.",
+				"properties": {
+					"token": {
+						"type": "string"
+					},
+					"expiresIn": {
+						"type": "number",
+						"format": "double",
+						"description": "Seconds until the token expires."
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"ringId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"token",
+					"expiresIn",
+					"propertyId",
+					"unitId",
+					"ringId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IssueVisitorTokenBody": {
+				"description": "Request a visitor call token for a doorbell ring (public; the ring must still be ringing).",
+				"properties": {
+					"ringId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"ringId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"StartVisitorCallBody": {
+				"description": "A door visitor starts a call; the target unit comes from the visitor token, not the body.",
+				"properties": {
+					"media": {
+						"$ref": "#/components/schemas/CallMedia"
+					},
+					"sdpOffer": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"media",
+					"sdpOffer"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AcceptCallBody": {
+				"properties": {
+					"sdpAnswer": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"sdpAnswer"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RelayResult": {
+				"description": "Acknowledges a relayed signaling message (whether a peer was reached).",
+				"properties": {
+					"delivered": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"delivered"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IceCandidateBody": {
+				"description": "A trickled ICE candidate, relayed verbatim to the other peer.",
+				"properties": {
+					"candidate": {
+						"type": "string"
+					},
+					"sdpMid": {
+						"type": "string"
+					},
+					"sdpMLineIndex": {
+						"type": "number",
+						"format": "double"
+					},
+					"usernameFragment": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"candidate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"EndCallBody": {
+				"properties": {
+					"reason": {
+						"$ref": "#/components/schemas/CallEndReason"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AnnouncementCategory": {
+				"type": "string",
+				"enum": [
+					"general",
+					"maintenance",
+					"event",
+					"security",
+					"amenities"
+				],
+				"description": "Announcement — Domain Entity (contexto bulletin, \"cartelera/avisos\").\nA one-way notice posted by property management and delivered to every resident of\nthe property (push + realtime, push suppressed for units in quiet hours). Pinned\nnotices sort first; an optional `expiresAt` drops the notice off the active board.\n\n- `published` → visible on the active board.\n- `archived`  → hidden (kept for history rather than hard-deleted)."
+			},
+			"AnnouncementStatus": {
+				"type": "string",
+				"enum": [
+					"published",
+					"archived"
+				]
+			},
+			"Announcement": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"body": {
+						"type": "string"
+					},
+					"category": {
+						"$ref": "#/components/schemas/AnnouncementCategory"
+					},
+					"pinned": {
+						"type": "boolean"
+					},
+					"status": {
+						"$ref": "#/components/schemas/AnnouncementStatus"
+					},
+					"publishedBy": {
+						"type": "string"
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time",
+						"description": "When set, the notice disappears from the active board after this instant."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"title",
+					"body",
+					"category",
+					"pinned",
+					"status",
+					"publishedBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateAnnouncementBody": {
+				"description": "HTTP body to publish an announcement.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"body": {
+						"type": "string"
+					},
+					"category": {
+						"$ref": "#/components/schemas/AnnouncementCategory"
+					},
+					"pinned": {
+						"type": "boolean"
+					},
+					"expiresAt": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"propertyId",
+					"title",
+					"body"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateAnnouncementBody": {
+				"description": "HTTP body to edit an announcement.",
+				"properties": {
+					"title": {
+						"type": "string"
+					},
+					"body": {
+						"type": "string"
+					},
+					"category": {
+						"$ref": "#/components/schemas/AnnouncementCategory"
+					},
+					"pinned": {
+						"type": "boolean"
+					},
+					"expiresAt": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"BookingStatus": {
+				"type": "string",
+				"enum": [
+					"confirmed",
+					"cancelled"
+				],
+				"description": "Booking — Domain Entity (contexto amenities).\nA reservation of an amenity for a time range, made by a resident on behalf of their\nunit. A `cancelled` booking frees its slot (excluded from availability checks)."
+			},
+			"Booking": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"amenityId": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"bookedBy": {
+						"type": "string"
+					},
+					"start": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"end": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"status": {
+						"$ref": "#/components/schemas/BookingStatus"
+					},
+					"note": {
+						"type": "string"
+					},
+					"cancelledBy": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"amenityId",
+					"propertyId",
+					"unitId",
+					"bookedBy",
+					"start",
+					"end",
+					"status"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateBookingBody": {
+				"description": "HTTP body to reserve an amenity.",
+				"properties": {
+					"amenityId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"start": {
+						"type": "string"
+					},
+					"end": {
+						"type": "string"
+					},
+					"note": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"amenityId",
+					"unitId",
+					"start",
+					"end"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AmenityStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"archived"
+				],
+				"description": "Amenity — Domain Entity (contexto amenities, \"reserva de amenities\").\nA bookable shared resource of a property (SUM, parrilla, gym, pileta...). Residents\nreserve time ranges against it; `capacity` is how many confirmed bookings may overlap\n(1 = exclusive). Optional `openTime`/`closeTime` (UTC 'HH:mm') bound the bookable hours\nand `maxDurationMinutes` caps a single booking.\n\n- `active`   → bookable and listed.\n- `archived` → hidden / not bookable (kept for history rather than hard-deleted)."
+			},
+			"Amenity": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"capacity": {
+						"type": "number",
+						"format": "double",
+						"description": "Simultaneous confirmed bookings allowed for an overlapping range (>= 1)."
+					},
+					"openTime": {
+						"type": "string",
+						"description": "Operating-hours lower bound, 'HH:mm' UTC (set together with `closeTime`)."
+					},
+					"closeTime": {
+						"type": "string",
+						"description": "Operating-hours upper bound, 'HH:mm' UTC."
+					},
+					"maxDurationMinutes": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"$ref": "#/components/schemas/AmenityStatus"
+					},
+					"createdBy": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"name",
+					"capacity",
+					"status",
+					"createdBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateAmenityBody": {
+				"description": "HTTP body to define an amenity.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"capacity": {
+						"type": "number",
+						"format": "double"
+					},
+					"openTime": {
+						"type": "string"
+					},
+					"closeTime": {
+						"type": "string"
+					},
+					"maxDurationMinutes": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"propertyId",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateAmenityBody": {
+				"description": "HTTP body to edit an amenity.",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"capacity": {
+						"type": "number",
+						"format": "double"
+					},
+					"openTime": {
+						"type": "string",
+						"nullable": true
+					},
+					"closeTime": {
+						"type": "string",
+						"nullable": true
+					},
+					"maxDurationMinutes": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AccessPointKind": {
+				"type": "string",
+				"enum": [
+					"gate",
+					"pedestrian",
+					"garage",
+					"service",
+					"amenity",
+					"other"
+				],
+				"description": "AccessPoint — Domain Entity (contexto access).\nA physical entry a property can open: main pedestrian door, vehicular gate, garage,\nservice entrance, amenity door, etc. Multi-point support is the base for proximity\nopening and lockers. Each property has exactly one `isMain` point (auto-provisioned),\nwhich is what gets opened when a request does not target a specific point.\n\n`driverRef` is the opaque hardware address the IDoorDriver uses to target this point\n(a relay channel, intercom id, lock URL key…). `location` enables proximity opening."
+			},
+			"AccessPointStatus": {
+				"type": "string",
+				"enum": [
+					"active",
+					"disabled"
+				]
+			},
+			"GeoLocation": {
+				"description": "Geographic anchor for an access point (used by proximity opening).",
+				"properties": {
+					"lat": {
+						"type": "number",
+						"format": "double"
+					},
+					"lng": {
+						"type": "number",
+						"format": "double"
+					},
+					"radiusMeters": {
+						"type": "number",
+						"format": "double",
+						"description": "Proximity radius in meters within which a nearby resident may open (default applied later)."
+					}
+				},
+				"required": [
+					"lat",
+					"lng"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AccessPoint": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/AccessPointKind"
+					},
+					"status": {
+						"$ref": "#/components/schemas/AccessPointStatus"
+					},
+					"isMain": {
+						"type": "boolean",
+						"description": "The default entry for the property; opened when no specific point is targeted."
+					},
+					"driverRef": {
+						"type": "string",
+						"description": "Opaque hardware address the door driver uses to target this point."
+					},
+					"location": {
+						"$ref": "#/components/schemas/GeoLocation"
+					},
+					"createdBy": {
+						"type": "string",
+						"description": "userId that created the point (the system/owner for auto-provisioned mains)."
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"propertyId",
+					"name",
+					"kind",
+					"status",
+					"isMain",
+					"createdBy"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateAccessPointBody": {
+				"description": "HTTP body for `POST /access-points`.",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/AccessPointKind"
+					},
+					"isMain": {
+						"type": "boolean"
+					},
+					"driverRef": {
+						"type": "string"
+					},
+					"location": {
+						"$ref": "#/components/schemas/GeoLocation"
+					}
+				},
+				"required": [
+					"propertyId",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateAccessPointBody": {
+				"description": "HTTP body for `PATCH /access-points/{accessPointId}`.",
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"kind": {
+						"$ref": "#/components/schemas/AccessPointKind"
+					},
+					"status": {
+						"$ref": "#/components/schemas/AccessPointStatus"
+					},
+					"isMain": {
+						"type": "boolean"
+					},
+					"driverRef": {
+						"type": "string"
+					},
+					"location": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/GeoLocation"
+							}
+						],
+						"nullable": true
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AccessEventType": {
+				"type": "string",
+				"enum": [
+					"door",
+					"parcel"
+				],
+				"description": "AccessEvent — Domain Entity (contexto access).\nThe building activity log (bitácora). Originally door openings; now also other\nnotable events (e.g. parcel delivery/pickup) so the whole building timeline lives\nin one place. Discriminated by `type`. Append-only; never mutated."
+			},
+			"AccessMethod": {
+				"type": "string",
+				"enum": [
+					"remote",
+					"manual",
+					"qr",
+					"proximity"
+				]
+			},
+			"AccessResult": {
+				"type": "string",
+				"enum": [
+					"opened",
+					"denied",
+					"failed",
+					"delivered",
+					"picked_up",
+					"returned"
+				],
+				"description": "'opened'|'denied'|'failed' apply to doors; 'delivered'|'picked_up'|'returned' to parcels."
+			},
+			"AccessEvent": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/AccessEventType",
+						"description": "What kind of activity this entry records (defaults to 'door')."
+					},
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"doorId": {
+						"type": "string"
+					},
+					"openedBy": {
+						"type": "string",
+						"description": "userId responsible for the event (opened the door / logged or handed over the parcel)."
+					},
+					"ringId": {
+						"type": "string",
+						"description": "Ring this opening responded to, if any (audit linkage)."
+					},
+					"accessPointId": {
+						"type": "string",
+						"description": "Access point that was opened, if any (audit linkage to the multi-point model)."
+					},
+					"parcelId": {
+						"type": "string",
+						"description": "Parcel this entry relates to, if any (audit linkage)."
+					},
+					"method": {
+						"$ref": "#/components/schemas/AccessMethod"
+					},
+					"result": {
+						"$ref": "#/components/schemas/AccessResult"
+					},
+					"detail": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"type",
+					"propertyId",
+					"openedBy",
+					"method",
+					"result"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"OpenDoorInput": {
+				"description": "Input to open a door (the actor comes from the JWT).",
+				"properties": {
+					"propertyId": {
+						"type": "string"
+					},
+					"unitId": {
+						"type": "string"
+					},
+					"accessPointId": {
+						"type": "string",
+						"description": "Access point to open. When omitted, the property's main point is used."
+					},
+					"doorId": {
+						"type": "string",
+						"deprecated": true
+					},
+					"ringId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"propertyId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ProximityCheckResult": {
+				"description": "Result of a proximity check: eligible carries a single-use grant to open with.",
+				"properties": {
+					"accessPointId": {
+						"type": "string"
+					},
+					"eligible": {
+						"type": "boolean"
+					},
+					"reason": {
+						"type": "string",
+						"description": "Present when not eligible: 'out_of_range' | 'inaccurate'."
+					},
+					"distanceMeters": {
+						"type": "number",
+						"format": "double",
+						"description": "Measured distance to the point (meters), when it could be computed."
+					},
+					"grantId": {
+						"type": "string",
+						"description": "Single-use token to pass to the open step; present only when eligible."
+					},
+					"expiresAt": {
+						"type": "string",
+						"format": "date-time",
+						"description": "When the grant expires; present only when eligible."
+					}
+				},
+				"required": [
+					"accessPointId",
+					"eligible"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ProximityCheckBody": {
+				"description": "HTTP body for `POST /access/proximity/check`.",
+				"properties": {
+					"accessPointId": {
+						"type": "string"
+					},
+					"lat": {
+						"type": "number",
+						"format": "double"
+					},
+					"lng": {
+						"type": "number",
+						"format": "double"
+					},
+					"accuracyMeters": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"accessPointId",
+					"lat",
+					"lng"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ProximityOpenBody": {
+				"description": "HTTP body for `POST /access/proximity/open`.",
+				"properties": {
+					"grantId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"grantId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {
+			"jwt": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "JWT"
+			}
+		}
+	},
+	"info": {
+		"title": "skeleton-nodejs-tsoa-tsyringe",
+		"version": "2.8.0",
+		"description": "Node.js + TypeScript backend skeleton (DDD + TSOA + TSyringe + MongoDB)",
+		"contact": {}
+	},
+	"paths": {
+		"/surveys": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Survey"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateSurveyBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Survey"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/SurveyStatus"
+						}
+					}
+				]
+			}
+		},
+		"/surveys/{surveyId}": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Survey"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "surveyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/surveys/{surveyId}/vote": {
+			"post": {
+				"operationId": "Vote",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Vote"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "surveyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CastVoteBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/surveys/{surveyId}/my-vote": {
+			"get": {
+				"operationId": "MyVote",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"allOf": [
+										{
+											"$ref": "#/components/schemas/Vote"
+										}
+									],
+									"nullable": true
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "surveyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/surveys/{surveyId}/results": {
+			"get": {
+				"operationId": "Results",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SurveyResults"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "surveyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/surveys/{surveyId}/votes": {
+			"get": {
+				"operationId": "ListVotes",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Vote"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "Individual ballots — management only, non-anonymous surveys.",
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "surveyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/surveys/{surveyId}/close": {
+			"post": {
+				"operationId": "Close",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Survey"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "surveyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/surveys/{surveyId}/reopen": {
+			"post": {
+				"operationId": "Reopen",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Survey"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Surveys"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "surveyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/security/blacklist": {
+			"post": {
+				"operationId": "AddBlacklist",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BlacklistEntry"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Security"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddBlacklistBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListBlacklist",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/BlacklistEntry"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Security"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/security/blacklist/{entryId}": {
+			"delete": {
+				"operationId": "RemoveBlacklist",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Security"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "entryId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/security/panic": {
+			"post": {
+				"operationId": "Panic",
+				"responses": {
+					"201": {
+						"description": "Triggered",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Alert"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Security"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PanicBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/security/alerts": {
+			"post": {
+				"operationId": "MassAlert",
+				"responses": {
+					"201": {
+						"description": "Sent",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Alert"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Security"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MassAlertBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListAlerts",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Alert"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Security"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/rings": {
+			"post": {
+				"operationId": "Ring",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ring"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Rings"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RingInput"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Ring"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Rings"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "unitId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/rings/{ringId}": {
+			"get": {
+				"operationId": "GetById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ring"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Rings"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "ringId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/rings/{ringId}/answer": {
+			"post": {
+				"operationId": "Answer",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ring"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Rings"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "ringId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/rings/{ringId}/reject": {
+			"post": {
+				"operationId": "Reject",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ring"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Rings"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "ringId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/rings/{ringId}/cancel": {
+			"post": {
+				"operationId": "Cancel",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ring"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Rings"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "ringId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Property"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreatePropertyInput"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListMine",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Property"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/properties/by-code/{code}": {
+			"get": {
+				"operationId": "Directory",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PropertyDirectory"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "code",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties/{propertyId}": {
+			"get": {
+				"operationId": "GetById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Property"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Property"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePropertyInput"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/properties/{propertyId}/disable": {
+			"post": {
+				"operationId": "Disable",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Property"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties/{propertyId}/enable": {
+			"post": {
+				"operationId": "Enable",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Property"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties/{propertyId}/code/rotate": {
+			"post": {
+				"operationId": "RotateCode",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Property"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties/{propertyId}/qr": {
+			"get": {
+				"operationId": "GetQr",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PropertyQr"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties/{propertyId}/units": {
+			"post": {
+				"operationId": "AddUnit",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unit"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateUnitInput"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListUnits",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaginatedUnits"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "q",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties/{propertyId}/units/bulk": {
+			"post": {
+				"operationId": "AddUnits",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Unit"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BulkCreateUnitsInput"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/properties/{propertyId}/admins": {
+			"post": {
+				"operationId": "AddAdmin",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PropertyAdmin"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddPropertyAdminInput"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListAdmins",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/PropertyAdmin"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/properties/{propertyId}/admins/{adminId}": {
+			"delete": {
+				"operationId": "RevokeAdmin",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Properties"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "adminId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/units/{unitId}/memberships": {
+			"post": {
+				"operationId": "Add",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Membership"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Memberships"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "unitId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateMembershipInput"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Membership"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Memberships"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "unitId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/units/{unitId}/memberships/{membershipId}": {
+			"delete": {
+				"operationId": "Revoke",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Memberships"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "unitId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "path",
+						"name": "membershipId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/passes": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AccessPass"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Passes"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateGuestPassBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/AccessPass"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Passes"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "unitId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/passes/staff": {
+			"post": {
+				"operationId": "CreateStaff",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AccessPass"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Passes"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateStaffPassBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/passes/redeem": {
+			"post": {
+				"operationId": "Redeem",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PassRedemption"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Passes"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RedeemPassBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/passes/{passId}": {
+			"delete": {
+				"operationId": "Revoke",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Passes"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "passId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/parcels": {
+			"post": {
+				"operationId": "Register",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Parcel"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Parcels"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterParcelBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Parcel"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Parcels"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "unitId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/ParcelStatus"
+						}
+					}
+				]
+			}
+		},
+		"/parcels/redeem": {
+			"post": {
+				"operationId": "Redeem",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Parcel"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Parcels"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RedeemParcelBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/parcels/{parcelId}/pickup": {
+			"post": {
+				"operationId": "Pickup",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Parcel"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Parcels"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "parcelId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/parcels/{parcelId}/return": {
+			"post": {
+				"operationId": "Return",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Parcel"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Parcels"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "parcelId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/lockers": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/LockerWithCompartments"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Lockers"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateLockerBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/LockerWithCompartments"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Lockers"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/lockers/{lockerId}/compartments": {
+			"post": {
+				"operationId": "AddCompartment",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/LockerCompartment"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Lockers"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "lockerId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddCompartmentBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/lockers/deposit": {
+			"post": {
+				"operationId": "Deposit",
+				"responses": {
+					"201": {
+						"description": "Deposited",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/LockerDepositResult"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Lockers"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/DepositParcelBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/lockers/open": {
+			"post": {
+				"operationId": "Open",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/LockerPickupResult"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Lockers"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/OpenCompartmentBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/invitations/residents": {
+			"post": {
+				"operationId": "InviteResident",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Invitation"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Invitations"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateResidentInvitationBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/invitations/admins": {
+			"post": {
+				"operationId": "InviteAdmin",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Invitation"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Invitations"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateAdminInvitationBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/invitations": {
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Invitation"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Invitations"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/invitations/{invitationId}": {
+			"delete": {
+				"operationId": "Revoke",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Invitations"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "invitationId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/invitations/accept": {
+			"post": {
+				"operationId": "Accept",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AcceptInvitationResult"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Invitations"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AcceptInvitationInput"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/devices": {
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Device"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Devices"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "Register",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Device"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Devices"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterDeviceRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/devices/{id}": {
+			"delete": {
+				"operationId": "Remove",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Devices"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/auth/magic-link": {
+			"post": {
+				"operationId": "RequestMagicLink",
+				"responses": {
+					"202": {
+						"description": "Accepted"
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MagicLinkRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/auth/verify": {
+			"post": {
+				"operationId": "Verify",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuthResult"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VerifyRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/auth/me": {
+			"get": {
+				"operationId": "Me",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/User"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/health/status": {
+			"get": {
+				"operationId": "CheckStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HealthStatus"
+								}
+							}
+						}
+					}
+				},
+				"description": "Liveness: the process is up.",
+				"tags": [
+					"Health"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/health/ready": {
+			"get": {
+				"operationId": "Ready",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ReadinessStatus"
+								}
+							}
+						}
+					}
+				},
+				"description": "Readiness: can we serve traffic? Checks the MongoDB connection (503 if down).",
+				"tags": [
+					"Health"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/expenses/periods": {
+			"post": {
+				"operationId": "CreatePeriod",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ExpensePeriod"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreatePeriodBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListPeriods",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/ExpensePeriod"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/ExpensePeriodStatus"
+						}
+					}
+				]
+			}
+		},
+		"/expenses/periods/{periodId}": {
+			"get": {
+				"operationId": "GetPeriod",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ExpensePeriod"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "periodId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/expenses/periods/{periodId}/charges": {
+			"post": {
+				"operationId": "AddCharge",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ExpenseCharge"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "periodId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddChargeBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListCharges",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/ExpenseCharge"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "periodId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/expenses/periods/{periodId}/generate": {
+			"post": {
+				"operationId": "GenerateCharges",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/ExpenseCharge"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "periodId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/GenerateChargesBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/expenses/periods/{periodId}/publish": {
+			"post": {
+				"operationId": "PublishPeriod",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ExpensePeriod"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "periodId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/expenses/periods/{periodId}/close": {
+			"post": {
+				"operationId": "ClosePeriod",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ExpensePeriod"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "periodId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/expenses/charges/mine": {
+			"get": {
+				"operationId": "MyCharges",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnitChargesSummary"
+								}
+							}
+						}
+					}
+				},
+				"description": "A resident's own charges and balance for a property.",
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/expenses/charges/{chargeId}/payments": {
+			"post": {
+				"operationId": "RegisterPayment",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaymentResult"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "chargeId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterPaymentBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListPayments",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Payment"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "chargeId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/expenses/reconcile": {
+			"post": {
+				"operationId": "Reconcile",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ReconcileResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "Match a single bank movement to a unit by its cents code and apply a `bank` payment.",
+				"tags": [
+					"Expenses"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ReconcileMovementBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/dnd": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/QuietHours"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"DoNotDisturb"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "unitId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "Set",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/QuietHours"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"DoNotDisturb"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SetQuietHoursBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/claims": {
+			"post": {
+				"operationId": "File",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Claim"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateClaimBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListForProperty",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Claim"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "The property's claim board (management only). Optional `status` filter.",
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/ClaimStatus"
+						}
+					}
+				]
+			}
+		},
+		"/claims/mine": {
+			"get": {
+				"operationId": "ListMine",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Claim"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "The caller's own claims in a property.",
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/claims/{claimId}": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Claim"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/claims/{claimId}/assign": {
+			"post": {
+				"operationId": "Assign",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Claim"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AssignClaimBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/claims/{claimId}/resolve": {
+			"post": {
+				"operationId": "Resolve",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Claim"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ResolveClaimBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/claims/{claimId}/close": {
+			"post": {
+				"operationId": "Close",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Claim"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/claims/{claimId}/reopen": {
+			"post": {
+				"operationId": "Reopen",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Claim"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/claims/{claimId}/cancel": {
+			"post": {
+				"operationId": "Cancel",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Claim"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/claims/{claimId}/comments": {
+			"post": {
+				"operationId": "Comment",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ClaimComment"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AddClaimCommentBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListComments",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/ClaimComment"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Claims"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "claimId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/chat/conversations": {
+			"post": {
+				"operationId": "StartConversation",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Conversation"
+								}
+							}
+						}
+					}
+				},
+				"description": "Start or fetch a conversation (`unit_staff` needs `unitId`; `direct` needs `targetUserId`).",
+				"tags": [
+					"Chat"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/StartConversationBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListConversations",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/ConversationSummary"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "The caller's conversations in a property (newest activity first, with unread counts).",
+				"tags": [
+					"Chat"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/chat/conversations/{conversationId}": {
+			"get": {
+				"operationId": "GetConversation",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Conversation"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Chat"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "conversationId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/chat/conversations/{conversationId}/messages": {
+			"get": {
+				"operationId": "ListMessages",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MessagePage"
+								}
+							}
+						}
+					}
+				},
+				"description": "A newest-first page of messages; pass `before` (ISO date) to load older ones.",
+				"tags": [
+					"Chat"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "conversationId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "before",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "SendMessage",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Message"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Chat"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "conversationId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SendMessageBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/conversations/{conversationId}/read": {
+			"post": {
+				"operationId": "MarkRead",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MarkReadResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "Mark the conversation read up to now (clears the caller's unread count).",
+				"tags": [
+					"Chat"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "conversationId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/calls": {
+			"post": {
+				"operationId": "Start",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CallSession"
+								}
+							}
+						}
+					}
+				},
+				"description": "Start a call towards a unit (provides the caller's SDP offer). Rings the residents.",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/StartCallBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListForProperty",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/CallSession"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "The property's call log (admins only).",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/calls/visitor-token": {
+			"post": {
+				"operationId": "IssueVisitorToken",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VisitorCallToken"
+								}
+							}
+						}
+					}
+				},
+				"description": "Mint a short-lived call token for an anonymous door visitor (public). The caller passes the\n`ringId` of the doorbell ring they raised; the returned token is scoped to that unit only.",
+				"tags": [
+					"Calls"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/IssueVisitorTokenBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/calls/visitor": {
+			"post": {
+				"operationId": "StartAsVisitor",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CallSession"
+								}
+							}
+						}
+					}
+				},
+				"description": "A door visitor starts a call (authenticated by their visitor token). Rings the residents.",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"visitor": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/StartVisitorCallBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/calls/by-unit": {
+			"get": {
+				"operationId": "ListForUnit",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/CallSession"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "The call log for a unit (its residents or admins).",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "unitId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/calls/{callId}": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CallSession"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					},
+					{
+						"visitor": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "callId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/calls/{callId}/accept": {
+			"post": {
+				"operationId": "Accept",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CallSession"
+								}
+							}
+						}
+					}
+				},
+				"description": "Resident answers with their SDP answer; the call goes active.",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "callId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AcceptCallBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/calls/{callId}/decline": {
+			"post": {
+				"operationId": "Decline",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CallSession"
+								}
+							}
+						}
+					}
+				},
+				"description": "Resident declines a ringing call.",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "callId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/calls/{callId}/ice": {
+			"post": {
+				"operationId": "Ice",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RelayResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "Trickle an ICE candidate to the other peer (relayed over realtime).",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					},
+					{
+						"visitor": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "callId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/IceCandidateBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/calls/{callId}/end": {
+			"post": {
+				"operationId": "End",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CallSession"
+								}
+							}
+						}
+					}
+				},
+				"description": "Hang up / cancel the call.",
+				"tags": [
+					"Calls"
+				],
+				"security": [
+					{
+						"jwt": []
+					},
+					{
+						"visitor": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "callId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/EndCallBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/bulletin": {
+			"post": {
+				"operationId": "Publish",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Announcement"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Bulletin"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateAnnouncementBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Announcement"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Bulletin"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/bulletin/{announcementId}": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Announcement"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Bulletin"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "announcementId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Announcement"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Bulletin"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "announcementId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateAnnouncementBody"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "Archive",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Bulletin"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "announcementId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/bookings": {
+			"post": {
+				"operationId": "Book",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Booking"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateBookingBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/bookings/amenity/{amenityId}": {
+			"get": {
+				"operationId": "ListForAmenity",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Booking"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "amenityId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "from",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "to",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/bookings/mine": {
+			"get": {
+				"operationId": "ListMine",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Booking"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/bookings/{bookingId}": {
+			"delete": {
+				"operationId": "Cancel",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Booking"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "bookingId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/amenities": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Amenity"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateAmenityBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Amenity"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/amenities/{amenityId}": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Amenity"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "amenityId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Amenity"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "amenityId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateAmenityBody"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "Archive",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Amenities"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "amenityId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/access-points": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AccessPoint"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Access Points"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateAccessPointBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/AccessPoint"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Access Points"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/access-points/{accessPointId}": {
+			"get": {
+				"operationId": "Get",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AccessPoint"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Access Points"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "accessPointId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"patch": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AccessPoint"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Access Points"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "accessPointId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateAccessPointBody"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "Remove",
+				"responses": {
+					"204": {
+						"description": "No Content"
+					}
+				},
+				"tags": [
+					"Access Points"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "accessPointId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/access/open": {
+			"post": {
+				"operationId": "Open",
+				"responses": {
+					"201": {
+						"description": "Opened",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AccessEvent"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Access"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/OpenDoorInput"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/access/proximity/check": {
+			"post": {
+				"operationId": "ProximityCheck",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProximityCheckResult"
+								}
+							}
+						}
+					}
+				},
+				"description": "Step 1: verify the caller is near the access point; returns a single-use grant if eligible.",
+				"tags": [
+					"Access"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ProximityCheckBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/access/proximity/open": {
+			"post": {
+				"operationId": "ProximityOpen",
+				"responses": {
+					"201": {
+						"description": "Opened",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AccessEvent"
+								}
+							}
+						}
+					}
+				},
+				"description": "Step 2: consume a grant from `proximity/check` and open the access point.",
+				"tags": [
+					"Access"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ProximityOpenBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/access": {
+			"get": {
+				"operationId": "Log",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/AccessEvent"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Access"
+				],
+				"security": [
+					{
+						"jwt": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "propertyId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "unitId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/"
+		}
+	]
+}

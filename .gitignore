@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+dev-dist
+*.local
+
+# Test / coverage
+coverage
+playwright-report
+test-results
+.vite
+
+# Env (NUNCA commitear secretos; el template .env.example SÍ se versiona)
+.env
+.env.*
+!.env.example
+
+# Registro corporativo de Nexus: SOLO local, jamás a GitHub
+.npmrc
+
+# Capacitor native projects (se generan localmente)
+/android
+/ios
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
