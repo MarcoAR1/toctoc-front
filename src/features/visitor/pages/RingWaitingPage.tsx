@@ -1,13 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Ban, BellRing, CircleCheck, CircleX, Clock } from 'lucide-react'
+import { Ban, BellRing, CircleCheck, CircleX, Clock, Phone, Video } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import { friendlyMessage } from '@/api/errors'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
+import type { CallMedia } from '@/features/calls/types'
 import { ringKey, useCancelRing, useRing, type Ring } from '@/features/visitor/api'
+import { VisitorCallPanel } from '@/features/visitor/VisitorCallPanel'
 import { useSocket } from '@/realtime/useSocket'
 
 /** Seguimiento del timbre tras tocarlo: estado en vivo, cancelar y desenlace. */
@@ -17,6 +19,7 @@ export function RingWaitingPage() {
   const cancel = useCancelRing()
   const queryClient = useQueryClient()
   const { socket } = useSocket({ kind: 'anonymous' })
+  const [callMedia, setCallMedia] = useState<CallMedia | null>(null)
 
   // Suscripción por socket (instantáneo); el polling de `useRing` es el respaldo.
   useEffect(() => {
@@ -66,6 +69,22 @@ export function RingWaitingPage() {
 
   const status = ring.data.status
 
+  const callPanel = callMedia ? (
+    <VisitorCallPanel ringId={ringId!} media={callMedia} onClose={() => setCallMedia(null)} />
+  ) : null
+  const callActions = (
+    <div className="flex gap-2">
+      <Button variant="outline" className="flex-1 gap-2" onClick={() => setCallMedia('audio')}>
+        <Phone className="size-4" aria-hidden="true" />
+        Llamar
+      </Button>
+      <Button variant="outline" className="flex-1 gap-2" onClick={() => setCallMedia('video')}>
+        <Video className="size-4" aria-hidden="true" />
+        Video
+      </Button>
+    </div>
+  )
+
   if (status === 'ringing') {
     return (
       <Card>
@@ -77,9 +96,10 @@ export function RingWaitingPage() {
           <CardTitle>Tocando el timbre…</CardTitle>
           <CardDescription>Esperando que atiendan. No cierres esta pantalla.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {callActions}
           <Button
-            variant="outline"
+            variant="ghost"
             className="w-full"
             onClick={() => cancel.mutate(ringId!)}
             disabled={cancel.isPending}
@@ -87,6 +107,7 @@ export function RingWaitingPage() {
             {cancel.isPending && <Spinner className="size-4" />}
             Cancelar
           </Button>
+          {callPanel}
         </CardContent>
       </Card>
     )
@@ -130,10 +151,12 @@ export function RingWaitingPage() {
         <CardTitle>{result.title}</CardTitle>
         <CardDescription>{result.description}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        {status === 'answered' && callActions}
         <Button asChild variant="outline" className="w-full">
           <Link to="/r">Tocar de nuevo</Link>
         </Button>
+        {callPanel}
       </CardContent>
     </Card>
   )

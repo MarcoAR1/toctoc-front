@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
+import type { CallEndedEvent, CallIncomingEvent, CallTakenEvent } from '@/features/calls/types'
 import { useAuthStore } from '@/features/auth/store'
+import { useResidentCallStore } from '@/features/resident/callStore'
 import { useResidentStore } from '@/features/resident/store'
 import { ringKey, type Ring } from '@/features/visitor/api'
 import { useSocket } from '@/realtime/useSocket'
@@ -23,6 +25,9 @@ export function useResidentRealtime() {
   const { socket, connected } = useSocket(token ? { kind: 'authenticated', token } : null)
   const setConnected = useResidentStore((s) => s.setConnected)
   const upsertRing = useResidentStore((s) => s.upsertRing)
+  const setIncomingCall = useResidentCallStore((s) => s.setIncoming)
+  const applyCallTaken = useResidentCallStore((s) => s.applyTaken)
+  const applyCallEnded = useResidentCallStore((s) => s.applyEnded)
   const queryClient = useQueryClient()
 
   useEffect(() => {
@@ -47,6 +52,26 @@ export function useResidentRealtime() {
       socket.off('ring.updated', apply)
     }
   }, [socket, upsertRing, queryClient])
+
+  useEffect(() => {
+    if (!socket) return
+    const onIncoming = (call: CallIncomingEvent) => {
+      setIncomingCall(call)
+      const who = call.initiatorLabel?.trim() || 'Alguien'
+      const verb = call.media === 'video' ? 'te hace una videollamada' : 'te llama'
+      toast(`${who} ${verb}`, { description: 'Llamada entrante' })
+    }
+    const onTaken = (e: CallTakenEvent) => applyCallTaken(e.callId)
+    const onEnded = (e: CallEndedEvent) => applyCallEnded(e.callId, e.reason)
+    socket.on('call.incoming', onIncoming)
+    socket.on('call.taken', onTaken)
+    socket.on('call.ended', onEnded)
+    return () => {
+      socket.off('call.incoming', onIncoming)
+      socket.off('call.taken', onTaken)
+      socket.off('call.ended', onEnded)
+    }
+  }, [socket, setIncomingCall, applyCallTaken, applyCallEnded])
 
   return { connected }
 }

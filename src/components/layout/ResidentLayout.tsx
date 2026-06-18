@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
 import { ModeToggle } from '@/components/theme/mode-toggle'
+import { ResidentCallOverlay } from '@/features/resident/CallOverlay'
 import { useResidentRealtime } from '@/features/resident/useResidentRealtime'
 import { cn } from '@/lib/utils'
 
@@ -39,6 +40,8 @@ export function ResidentLayout() {
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-6 pb-24">
         <Outlet />
       </main>
+
+      <ResidentCallOverlay />
 
       <nav className="safe-bottom bg-background/95 fixed inset-x-0 bottom-0 z-10 border-t backdrop-blur">
         <div className="mx-auto flex max-w-lg items-stretch justify-around">

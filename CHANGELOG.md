@@ -7,6 +7,42 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-18
+
+**Llamada en vivo (WebRTC)** (M3): tras tocar el timbre, el visitante puede hablar/verse con el
+residente en tiempo real. El servidor sólo retransmite la señalización (SDP); el audio/video va
+peer-to-peer.
+
+### Added
+
+- **Módulo de llamadas (`src/features/calls`)** — base compartida por visitante y residente:
+  `PeerSession` (envoltura de `RTCPeerConnection` con **ICE no-trickle**: junta los candidatos y los
+  embebe en el SDP, con tope de espera), `signaling.ts` (atender/rechazar/colgar e iniciar como
+  visitante), `iceServers` (de `VITE_ICE_SERVERS`) y `MediaView` (enchufa el `MediaStream` al video).
+- **Residente atiende (#Calls, callee)** — `ResidentCallOverlay` montado en `ResidentLayout`: la
+  llamada entrante (`call.incoming`) aparece sobre cualquier pantalla con **Atender / Rechazar**, y
+  en curso muestra video remoto + preview local y **Colgar**. Si otro residente atiende primero
+  (`call.taken`) o el otro lado corta (`call.ended`), se cierra solo.
+- **Visitante llama (#Calls, caller)** — botones **Llamar** (audio) y **Videollamada** en
+  `RingWaitingPage` mientras el timbre suena o fue atendido. `VisitorCallPanel` pide un token
+  efímero (`POST /calls/visitor-token`), inicia la llamada (`POST /calls/visitor`) y recibe el
+  `call.accepted` por un socket autenticado con ese token (room `user:visitor:{ringId}`).
+
+### Tests
+
+- `PeerSession` (offer/answer + espera de recolección ICE) con `RTCPeerConnection`/`getUserMedia`
+  mockeados; `ResidentCallOverlay` (entrante → atender → en curso; rechazar; fin remoto);
+  `VisitorCallPanel` (iniciar → atendida → colgar).
+
+### Notas
+
+- **ICE no-trickle**: por simplicidad y robustez no usamos el canal `/calls/{id}/ice` ni el evento
+  `call.ice`; el SDP ya viaja con los candidatos. Se puede migrar a trickle más adelante.
+- `POST /calls/{callId}/accept` reusa el operationId colisionado `Accept` (resuelve a aceptar
+  invitación) — se fuerza el contrato con un cast acotado, como en `useOpenDoor`/`useRingsByUnit`.
+- El visitante adjunta su token por header (`Authorization`) porque no tiene sesión; el
+  `authMiddleware` sólo pisa ese header cuando hay token de sesión.
+
 ## [0.6.0] - 2026-06-18
 
 **Ajustes del residente** (cierra M2): "no molestar" por unidad y gestión de dispositivos. Con esto la
@@ -221,7 +257,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.3.0...v0.4.0
