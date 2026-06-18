@@ -7,6 +7,40 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-06-18
+
+**Panel admin — gestión de la propiedad** (M4): completa el detalle con edición, habilitar/deshabilitar
+y el código QR (ver, copiar, descargar y rotar).
+
+### Added
+
+- **Editar propiedad (#Properties)** — desde el detalle: nombre y visibilidad del directorio
+  (`PATCH /properties/{id}`), en un formulario inline.
+- **Habilitar / Deshabilitar (#Properties)** — `POST /properties/{id}/disable` / `…/enable`; al
+  deshabilitar, la propiedad deja de resolver por QR (se avisa en la tarjeta del código).
+- **Código QR (#Properties)** — el detalle muestra el QR público (`GET /properties/{id}/qr`)
+  renderizado en cliente, con **copiar enlace**, **descargar** (SVG) y **rotar código**
+  (`POST /properties/{id}/code/rotate`, con confirmación) que invalida el QR anterior.
+- **Hooks** — `useUpdateProperty`, `useDisableProperty`, `useEnableProperty`, `useRotateCode`,
+  `usePropertyQr` (TanStack Query; refrescan la cache de la propiedad y del QR).
+
+### Changed
+
+- Nueva dependencia **`qrcode.react`** para renderizar el QR como SVG (impresión/descarga nítida, sin
+  depender de servicios externos).
+
+### Tests
+
+- `AdminPropertyDetailPage`: render con QR + acciones, **editar** (`PATCH` con el body correcto),
+  **deshabilitar** y **rotar** el código.
+
+### Notas
+
+- Sin colisión de operationId esta vez: `Update` (PATCH) gana la dedupe del OpenAPI y
+  `Disable` / `Enable` / `RotateCode` / `GetQr` son únicos → todos quedan bien tipados (sin cast).
+- La descarga del QR es **SVG** (escalable e imprimible); el export a PNG se puede sumar a futuro
+  convirtiéndolo en canvas.
+
 ## [0.9.0] - 2026-06-18
 
 **Panel admin — propiedades** (arranca M4): la consola de administración. El admin ve las propiedades
@@ -322,7 +356,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.6.0...v0.7.0

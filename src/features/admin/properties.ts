@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 
 import { api, unwrap } from '@/api/client'
 import type { components } from '@/api/schema'
@@ -7,6 +7,8 @@ export type Property = components['schemas']['Property']
 export type Unit = components['schemas']['Unit']
 export type PaginatedUnits = components['schemas']['PaginatedUnits']
 export type CreateUnitInput = components['schemas']['CreateUnitInput']
+export type PropertyQr = components['schemas']['PropertyQr']
+export type UpdatePropertyInput = components['schemas']['UpdatePropertyInput']
 export type PropertyType = Property['type']
 export type PropertyStatus = Property['status']
 export type DirectoryVisibility = Property['directoryVisibility']
@@ -43,6 +45,7 @@ export const propertiesKey = ['admin', 'properties'] as const
 export const propertyKey = (propertyId: string) => ['admin', 'property', propertyId] as const
 export const propertyUnitsKey = (propertyId: string) =>
   ['admin', 'property', propertyId, 'units'] as const
+export const propertyQrKey = (propertyId: string) => ['admin', 'property', propertyId, 'qr'] as const
 
 /** `GET /properties` — propiedades que el usuario creó o administra/habita. `ListMine` es único. */
 export function useAdminProperties() {
@@ -110,5 +113,68 @@ export function useAddUnit(propertyId: string) {
     mutationFn: async (body: CreateUnitInput): Promise<Unit> =>
       unwrap(await api.POST('/properties/{propertyId}/units', { params: { path: { propertyId } }, body })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: propertyUnitsKey(propertyId) }),
+  })
+}
+
+/** Refresca las caches tras una mutación que devuelve la `Property` actualizada. */
+function applyPropertyUpdate(queryClient: QueryClient, property: Property) {
+  queryClient.setQueryData(propertyKey(property.id), property)
+  queryClient.invalidateQueries({ queryKey: propertiesKey })
+}
+
+/** `PATCH /properties/{propertyId}` — edita nombre/visibilidad. `Update` gana la dedupe → bien tipado. */
+export function useUpdateProperty(propertyId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: UpdatePropertyInput): Promise<Property> =>
+      unwrap(await api.PATCH('/properties/{propertyId}', { params: { path: { propertyId } }, body })),
+    onSuccess: (property) => applyPropertyUpdate(queryClient, property),
+  })
+}
+
+/** `POST /properties/{propertyId}/disable` — deshabilita (deja de resolver por QR). `Disable` es único. */
+export function useDisableProperty(propertyId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (): Promise<Property> =>
+      unwrap(await api.POST('/properties/{propertyId}/disable', { params: { path: { propertyId } } })),
+    onSuccess: (property) => applyPropertyUpdate(queryClient, property),
+  })
+}
+
+/** `POST /properties/{propertyId}/enable` — reactiva la propiedad. `Enable` es único. */
+export function useEnableProperty(propertyId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (): Promise<Property> =>
+      unwrap(await api.POST('/properties/{propertyId}/enable', { params: { path: { propertyId } } })),
+    onSuccess: (property) => applyPropertyUpdate(queryClient, property),
+  })
+}
+
+/** `POST /properties/{propertyId}/code/rotate` — genera un código nuevo (invalida el QR previo). `RotateCode` es único. */
+export function useRotateCode(propertyId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (): Promise<Property> =>
+      unwrap(await api.POST('/properties/{propertyId}/code/rotate', { params: { path: { propertyId } } })),
+    onSuccess: (property) => {
+      applyPropertyUpdate(queryClient, property)
+      queryClient.invalidateQueries({ queryKey: propertyQrKey(property.id) })
+    },
+  })
+}
+
+/** `GET /properties/{propertyId}/qr` — payload del QR (código + deep-link). `GetQr` es único. */
+export function usePropertyQr(propertyId: string | undefined) {
+  return useQuery({
+    queryKey: propertyQrKey(propertyId ?? 'none'),
+    enabled: Boolean(propertyId),
+    queryFn: async (): Promise<PropertyQr> =>
+      unwrap(
+        await api.GET('/properties/{propertyId}/qr', {
+          params: { path: { propertyId: propertyId! } },
+        }),
+      ),
   })
 }

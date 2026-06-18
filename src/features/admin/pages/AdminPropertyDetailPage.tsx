@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { ArrowLeft, Download, Link2, Pencil, Plus, Power, RefreshCw } from 'lucide-react'
 
 import { friendlyMessage } from '@/api/errors'
 import { Badge } from '@/components/ui/badge'
@@ -16,10 +17,273 @@ import {
   PROPERTY_STATUS_BADGE,
   PROPERTY_TYPE_LABEL,
   useAddUnit,
+  useDisableProperty,
+  useEnableProperty,
   useProperty,
+  usePropertyQr,
   usePropertyUnits,
+  useRotateCode,
+  useUpdateProperty,
+  type DirectoryVisibility,
+  type Property,
   type Unit,
 } from '@/features/admin/properties'
+
+const VISIBILITIES = Object.keys(DIRECTORY_VISIBILITY_LABEL) as DirectoryVisibility[]
+const SELECT_CLASS =
+  'border-input bg-background focus-visible:ring-ring/50 h-9 rounded-md border px-3 text-sm outline-none focus-visible:ring-[3px]'
+
+/** Formulario para editar nombre y visibilidad del directorio de la propiedad. */
+function EditPropertyForm({ property, onClose }: { property: Property; onClose: () => void }) {
+  const updateProperty = useUpdateProperty(property.id)
+  const [name, setName] = useState(property.name)
+  const [visibility, setVisibility] = useState<DirectoryVisibility>(property.directoryVisibility)
+
+  const canSubmit = name.trim().length > 0
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (!canSubmit) return
+    try {
+      await updateProperty.mutateAsync({ name: name.trim(), directoryVisibility: visibility })
+      toast.success('Propiedad actualizada')
+      onClose()
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-name">Nombre</Label>
+            <Input
+              id="edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={120}
+              required
+            />
+          </div>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Directorio</span>
+            <select
+              aria-label="Directorio"
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value as DirectoryVisibility)}
+              className={SELECT_CLASS}
+            >
+              {VISIBILITIES.map((v) => (
+                <option key={v} value={v}>
+                  {DIRECTORY_VISIBILITY_LABEL[v]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!canSubmit || updateProperty.isPending} className="gap-2">
+              {updateProperty.isPending && <Spinner className="size-4" />}
+              Guardar
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
+
+/** Cabecera de la propiedad con acciones de edición y habilitar/deshabilitar. */
+function PropertyOverview({ property }: { property: Property }) {
+  const [editing, setEditing] = useState(false)
+  const disableProperty = useDisableProperty(property.id)
+  const enableProperty = useEnableProperty(property.id)
+  const status = PROPERTY_STATUS_BADGE[property.status]
+  const isDisabled = property.status === 'disabled'
+  const toggling = disableProperty.isPending || enableProperty.isPending
+
+  async function toggleStatus() {
+    try {
+      if (isDisabled) {
+        await enableProperty.mutateAsync()
+        toast.success('Propiedad habilitada')
+      } else {
+        await disableProperty.mutateAsync()
+        toast.success('Propiedad deshabilitada')
+      }
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Card>
+        <CardContent className="flex flex-col gap-3 pt-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold">{property.name}</h2>
+            <Badge variant={status.variant}>{status.label}</Badge>
+          </div>
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-sm">
+            <span>{PROPERTY_TYPE_LABEL[property.type]}</span>
+            <span aria-hidden="true">·</span>
+            <span className="font-mono">{property.code}</span>
+            <span aria-hidden="true">·</span>
+            <span>{DIRECTORY_VISIBILITY_LABEL[property.directoryVisibility]}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setEditing((v) => !v)}
+            >
+              <Pencil className="size-4" aria-hidden="true" />
+              Editar
+            </Button>
+            <Button
+              size="sm"
+              variant={isDisabled ? 'outline' : 'destructive'}
+              className="gap-1.5"
+              onClick={toggleStatus}
+              disabled={toggling}
+            >
+              {toggling ? (
+                <Spinner className="size-4" />
+              ) : (
+                <Power className="size-4" aria-hidden="true" />
+              )}
+              {isDisabled ? 'Habilitar' : 'Deshabilitar'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {editing && <EditPropertyForm property={property} onClose={() => setEditing(false)} />}
+    </div>
+  )
+}
+
+/** Tarjeta del QR público: ver, copiar enlace, descargar (SVG) y rotar el código. */
+function QrSection({ property }: { property: Property }) {
+  const qr = usePropertyQr(property.id)
+  const rotateCode = useRotateCode(property.id)
+  const [confirmingRotate, setConfirmingRotate] = useState(false)
+  const svgWrapperRef = useRef<HTMLDivElement>(null)
+
+  function downloadSvg() {
+    const svg = svgWrapperRef.current?.querySelector('svg')
+    if (!svg || !qr.data) return
+    const xml = new XMLSerializer().serializeToString(svg)
+    const blob = new Blob([xml], { type: 'image/svg+xml' })
+    const href = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = href
+    a.download = `toctoc-qr-${qr.data.code}.svg`
+    a.click()
+    URL.revokeObjectURL(href)
+  }
+
+  async function copyLink() {
+    if (!qr.data) return
+    try {
+      await navigator.clipboard.writeText(qr.data.url)
+      toast.success('Enlace copiado')
+    } catch {
+      toast.error('No se pudo copiar el enlace')
+    }
+  }
+
+  async function confirmRotate() {
+    try {
+      await rotateCode.mutateAsync()
+      toast.success('Código rotado')
+      setConfirmingRotate(false)
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-base font-semibold">Código QR</h2>
+      <Card>
+        <CardContent className="pt-6">
+          {qr.isPending ? (
+            <Skeleton className="h-44 w-full" />
+          ) : qr.isError ? (
+            <p className="text-destructive text-sm" role="alert">
+              {friendlyMessage(qr.error)}
+            </p>
+          ) : qr.data ? (
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+              <div ref={svgWrapperRef} className="rounded-lg border bg-white p-3">
+                <QRCodeSVG value={qr.data.url} size={160} marginSize={1} />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground text-xs font-medium">Código</span>
+                  <span className="font-mono text-lg">{qr.data.code}</span>
+                  <span className="text-muted-foreground text-xs break-all">{qr.data.url}</span>
+                </div>
+                {property.status === 'disabled' && (
+                  <p className="text-muted-foreground text-xs">
+                    La propiedad está deshabilitada: el QR no resuelve hasta reactivarla.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={copyLink}>
+                    <Link2 className="size-4" aria-hidden="true" />
+                    Copiar enlace
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={downloadSvg}>
+                    <Download className="size-4" aria-hidden="true" />
+                    Descargar
+                  </Button>
+                </div>
+
+                {confirmingRotate ? (
+                  <div className="flex flex-col gap-2 rounded-md border p-3">
+                    <p className="text-sm">¿Rotar el código? El QR actual dejará de funcionar.</p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="gap-1.5"
+                        onClick={confirmRotate}
+                        disabled={rotateCode.isPending}
+                      >
+                        {rotateCode.isPending && <Spinner className="size-4" />}
+                        Confirmar
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setConfirmingRotate(false)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="gap-1.5 self-start"
+                    onClick={() => setConfirmingRotate(true)}
+                  >
+                    <RefreshCw className="size-4" aria-hidden="true" />
+                    Rotar código
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
 
 /** Formulario para agregar una unidad a la propiedad. */
 function NewUnitForm({ propertyId, onClose }: { propertyId: string; onClose: () => void }) {
@@ -175,24 +439,8 @@ export function AdminPropertyDetailPage() {
         </p>
       ) : property.data ? (
         <>
-          <Card>
-            <CardContent className="flex flex-col gap-2 pt-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold">{property.data.name}</h2>
-                <Badge variant={PROPERTY_STATUS_BADGE[property.data.status].variant}>
-                  {PROPERTY_STATUS_BADGE[property.data.status].label}
-                </Badge>
-              </div>
-              <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-sm">
-                <span>{PROPERTY_TYPE_LABEL[property.data.type]}</span>
-                <span aria-hidden="true">·</span>
-                <span className="font-mono">{property.data.code}</span>
-                <span aria-hidden="true">·</span>
-                <span>{DIRECTORY_VISIBILITY_LABEL[property.data.directoryVisibility]}</span>
-              </div>
-            </CardContent>
-          </Card>
-
+          <PropertyOverview property={property.data} />
+          <QrSection property={property.data} />
           <UnitsSection propertyId={property.data.id} />
         </>
       ) : null}
