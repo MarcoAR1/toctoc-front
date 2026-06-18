@@ -1,19 +1,12 @@
 import { LogOut } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 
 import { Placeholder } from '@/components/common/Placeholder'
 import { Button } from '@/components/ui/button'
-import { useAuthStore } from '@/features/auth/store'
+import { useLogout } from '@/features/auth/api'
 
 /** Ajustes del residente: dispositivos, push, no molestar, cerrar sesión. */
 export function SettingsPage() {
-  const navigate = useNavigate()
-  const clear = useAuthStore((s) => s.clear)
-
-  function logout() {
-    clear()
-    navigate('/')
-  }
+  const logout = useLogout()
 
   return (
     <div className="flex flex-col gap-4">
