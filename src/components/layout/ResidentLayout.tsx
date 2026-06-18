@@ -1,4 +1,4 @@
-import { Clock, Home, Settings } from 'lucide-react'
+import { Clock, Home, LifeBuoy, Settings } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 const NAV = [
   { to: '/app', label: 'Inicio', icon: Home, end: true },
   { to: '/app/history', label: 'Historial', icon: Clock, end: false },
+  { to: '/app/claims', label: 'Reclamos', icon: LifeBuoy, end: false },
   { to: '/app/settings', label: 'Ajustes', icon: Settings, end: false },
 ]
 

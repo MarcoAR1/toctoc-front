@@ -7,6 +7,41 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-18
+
+**Reclamos del residente** (contexto `claims`): mesa de ayuda del edificio. El residente abre un
+reclamo sobre su unidad (mantenimiento, ruido, seguridad…), sigue su estado y conversa con la
+administración en un hilo de comentarios.
+
+### Added
+
+- **Reclamos (#Claims)** — nueva pestaña **Reclamos** en la navegación del residente:
+  - **Listar** mis reclamos por propiedad (`GET /claims/mine`) con asunto, categoría, prioridad,
+    estado y fecha (`ClaimsPage`).
+  - **Abrir** un reclamo (`POST /claims`) eligiendo unidad, categoría y prioridad (`NewClaimPage`).
+  - **Detalle** con el workflow (`open → in_progress → resolved → closed`, o `cancelled`), acciones
+    del autor (**cancelar** / **reabrir**) y un **hilo de comentarios** público
+    (`GET`/`POST /claims/{id}/comments`) (`ClaimDetailPage`).
+- **Realtime de reclamos** — `useResidentRealtime` ahora escucha `claim.assigned` / `claim.resolved`
+  / `claim.closed` / `claim.reopened` / `claim.cancelled` / `claim.comment` y refresca la cache de
+  TanStack Query + avisa con un toast (consistente con timbres y llamadas).
+- **Hooks de claims** (`src/features/resident/claims.ts`) con react-query + mapas de etiquetas
+  (categoría/prioridad/estado) reutilizables por las páginas.
+
+### Tests
+
+- `ClaimsPage` (lista + estado vacío), `NewClaimPage` (crea con el body correcto) y
+  `ClaimDetailPage` (detalle + hilo, agregar comentario, cancelar) con `@/api/client` mockeado.
+
+### Notas
+
+- **Colisión de operationId** (igual que en milestones anteriores): `ListMine` (lo reusa
+  `GET /properties`), `Get`, `Cancel` y `Reopen` resuelven a otra operación en el OpenAPI, así que
+  `GET /claims/mine`, `GET /claims/{id}`, `cancel` y `reopen` usan un cast acotado y comentado.
+  `File` (crear) y `ListComments`/`Comment` (hilo) son únicos y quedan bien tipados.
+- **Fuera de alcance** (será parte del panel admin, M4): board de la propiedad (`GET /claims`) y las
+  transiciones de gestión (`assign` / `resolve` / `close`), que son admin-only.
+
 ## [0.7.0] - 2026-06-18
 
 **Llamada en vivo (WebRTC)** (M3): tras tocar el timbre, el visitante puede hablar/verse con el
@@ -257,7 +292,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.4.0...v0.5.0

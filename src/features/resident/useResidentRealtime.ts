@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { CallEndedEvent, CallIncomingEvent, CallTakenEvent } from '@/features/calls/types'
 import { useAuthStore } from '@/features/auth/store'
 import { useResidentCallStore } from '@/features/resident/callStore'
+import { claimCommentsKey, claimKey, claimsKey, type Claim } from '@/features/resident/claims'
 import { useResidentStore } from '@/features/resident/store'
 import { ringKey, type Ring } from '@/features/visitor/api'
 import { useSocket } from '@/realtime/useSocket'
@@ -72,6 +73,28 @@ export function useResidentRealtime() {
       socket.off('call.ended', onEnded)
     }
   }, [socket, setIncomingCall, applyCallTaken, applyCallEnded])
+
+  useEffect(() => {
+    if (!socket) return
+    const handle = (message: string) => (claim: Claim) => {
+      queryClient.setQueryData(claimKey(claim.id), claim)
+      queryClient.invalidateQueries({ queryKey: claimsKey(claim.propertyId) })
+      queryClient.invalidateQueries({ queryKey: claimCommentsKey(claim.id) })
+      toast(message, { description: claim.subject })
+    }
+    const events: Record<string, (claim: Claim) => void> = {
+      'claim.assigned': handle('Tu reclamo fue asignado'),
+      'claim.resolved': handle('Tu reclamo fue resuelto'),
+      'claim.closed': handle('Tu reclamo fue cerrado'),
+      'claim.reopened': handle('Tu reclamo fue reabierto'),
+      'claim.cancelled': handle('Tu reclamo fue cancelado'),
+      'claim.comment': handle('Nuevo comentario en tu reclamo'),
+    }
+    for (const [event, fn] of Object.entries(events)) socket.on(event, fn)
+    return () => {
+      for (const [event, fn] of Object.entries(events)) socket.off(event, fn)
+    }
+  }, [socket, queryClient])
 
   return { connected }
 }

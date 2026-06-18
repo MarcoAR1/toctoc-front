@@ -10,8 +10,11 @@ import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { VerifyPage } from '@/features/auth/pages/VerifyPage'
 import { AdminPropertiesPage } from '@/features/admin/pages/AdminPropertiesPage'
 import { AdminPropertyDetailPage } from '@/features/admin/pages/AdminPropertyDetailPage'
+import { ClaimDetailPage } from '@/features/resident/pages/ClaimDetailPage'
+import { ClaimsPage } from '@/features/resident/pages/ClaimsPage'
 import { HistoryPage } from '@/features/resident/pages/HistoryPage'
 import { IncomingPage } from '@/features/resident/pages/IncomingPage'
+import { NewClaimPage } from '@/features/resident/pages/NewClaimPage'
 import { ResidentHomePage } from '@/features/resident/pages/ResidentHomePage'
 import { SettingsPage } from '@/features/resident/pages/SettingsPage'
 import { DirectoryPage } from '@/features/visitor/pages/DirectoryPage'
@@ -54,6 +57,9 @@ export const router = createBrowserRouter([
           { path: '/app', element: <ResidentHomePage /> },
           { path: '/app/incoming/:id', element: <IncomingPage /> },
           { path: '/app/history', element: <HistoryPage /> },
+          { path: '/app/claims', element: <ClaimsPage /> },
+          { path: '/app/claims/new', element: <NewClaimPage /> },
+          { path: '/app/claims/:claimId', element: <ClaimDetailPage /> },
           { path: '/app/settings', element: <SettingsPage /> },
         ],
       },
