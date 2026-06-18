@@ -6,13 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AdminPropertyDetailPage } from '@/features/admin/pages/AdminPropertyDetailPage'
 
-const { getMock, postMock, patchMock } = vi.hoisted(() => ({
+const { getMock, postMock, patchMock, deleteMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   patchMock: vi.fn(),
+  deleteMock: vi.fn(),
 }))
 vi.mock('@/api/client', () => ({
-  api: { GET: getMock, POST: postMock, PATCH: patchMock },
+  api: { GET: getMock, POST: postMock, PATCH: patchMock, DELETE: deleteMock },
   unwrap: (result: { data?: unknown }) => result.data,
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
@@ -28,6 +29,17 @@ const PROPERTY = {
 }
 const UNIT = { id: 'u1', propertyId: 'p1', label: '4B', directoryName: 'Familia Pérez', status: 'active' }
 const QR = { code: 'UN2SSCJ', url: 'http://localhost:5173/r/UN2SSCJ' }
+const INVITATION = {
+  id: 'inv1',
+  email: 'pendiente@example.com',
+  propertyId: 'p1',
+  type: 'unit_resident',
+  unitId: 'u1',
+  membershipRole: 'tenant',
+  status: 'pending',
+  expiresAt: '2026-07-01T12:00:00Z',
+  invitedBy: 'admin',
+}
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -52,6 +64,8 @@ describe('AdminPropertyDetailPage', () => {
           return Promise.resolve({ data: { items: [UNIT], total: 1, page: 1, limit: 100 } })
         case '/properties/{propertyId}/qr':
           return Promise.resolve({ data: QR })
+        case '/invitations':
+          return Promise.resolve({ data: [INVITATION] })
         default:
           return Promise.resolve({ data: [] })
       }
@@ -66,16 +80,22 @@ describe('AdminPropertyDetailPage', () => {
           return Promise.resolve({ data: { ...PROPERTY, status: 'disabled' } })
         case '/properties/{propertyId}/enable':
           return Promise.resolve({ data: { ...PROPERTY, status: 'active' } })
+        case '/invitations/residents':
+          return Promise.resolve({ data: { ...INVITATION, id: 'inv9', email: 'vecino@example.com' } })
+        case '/invitations/admins':
+          return Promise.resolve({ data: { ...INVITATION, id: 'inv8', type: 'property_admin' } })
         default:
           return Promise.resolve({ data: {} })
       }
     })
     patchMock.mockResolvedValue({ data: { ...PROPERTY, name: 'Edificio Roca 999' } })
+    deleteMock.mockResolvedValue({ data: undefined })
   })
   afterEach(() => {
     getMock.mockReset()
     postMock.mockReset()
     patchMock.mockReset()
+    deleteMock.mockReset()
   })
 
   it('muestra la cabecera, el QR y las unidades', async () => {
@@ -153,5 +173,38 @@ describe('AdminPropertyDetailPage', () => {
 
     await waitFor(() => expect(postMock).toHaveBeenCalled())
     expect(postMock.mock.calls[0][0]).toBe('/properties/{propertyId}/code/rotate')
+  })
+
+  it('invita a un residente a una unidad', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Invitar' }))
+    await user.type(screen.getByLabelText('Email'), 'vecino@example.com')
+
+    const submit = screen.getByRole('button', { name: /enviar invitación/i })
+    await waitFor(() => expect(submit).toBeEnabled())
+    await user.click(submit)
+
+    await waitFor(() => expect(postMock).toHaveBeenCalled())
+    const [path, init] = postMock.mock.calls[0] as [string, { body: Record<string, unknown> }]
+    expect(path).toBe('/invitations/residents')
+    expect(init.body).toMatchObject({ unitId: 'u1', email: 'vecino@example.com', role: 'tenant' })
+  })
+
+  it('lista una invitación pendiente y la revoca', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByText('pendiente@example.com')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Revocar invitación' }))
+
+    await waitFor(() => expect(deleteMock).toHaveBeenCalled())
+    const [path, init] = deleteMock.mock.calls[0] as [
+      string,
+      { params: { path: { invitationId: string } } },
+    ]
+    expect(path).toBe('/invitations/{invitationId}')
+    expect(init.params.path.invitationId).toBe('inv1')
   })
 })

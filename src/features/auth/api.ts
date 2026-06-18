@@ -31,6 +31,20 @@ export function useVerifyMagicLink() {
   })
 }
 
+/**
+ * `POST /invitations/accept` — self-claim: canjea el token de la invitación, persiste la sesión
+ * (igual que un magic link) y devuelve el resultado (incluye `invitation.type` para el redirect).
+ * El operationId `Accept` gana la dedupe del OpenAPI → queda bien tipado.
+ */
+export function useAcceptInvitation() {
+  const setSession = useAuthStore((s) => s.setSession)
+  return useMutation({
+    mutationFn: async (token: string) =>
+      unwrap(await api.POST('/invitations/accept', { body: { token } })),
+    onSuccess: (result) => setSession(result.accessToken, toAuthUser(result.user)),
+  })
+}
+
 /** `GET /auth/me` — usuario de la sesión actual. Sólo corre si hay token. */
 export function useMe() {
   const token = useAuthStore((s) => s.accessToken)

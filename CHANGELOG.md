@@ -7,6 +7,39 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-18
+
+**Panel admin — invitaciones + aceptación** (M4): onboarding de personas por email. El admin invita
+residentes (a una unidad) o co-admins (a la propiedad), y el invitado entra en un clic desde el enlace
+del email (self-claim).
+
+### Added
+
+- **Invitaciones (#Invitations)** — sección en el detalle de la propiedad: invitar **residente**
+  (`POST /invitations/residents`, eligiendo unidad + rol) o **co-admin** (`POST /invitations/admins`,
+  rol manager/encargado), **listar** las pendientes (`GET /invitations?propertyId=`) y **revocar**
+  (`DELETE /invitations/{id}`).
+- **Aceptar invitación (#Invitations)** — `InviteAcceptPage` real (`/invite/accept?token=`): canjea el
+  token (`POST /invitations/accept`), persiste la sesión igual que un magic link y entra; un co-admin
+  va al panel (`/admin`), un residente a la app (`/app`). Maneja token faltante / inválido / vencido.
+- **Hooks** — `src/features/admin/invitations.ts` (`useInvitations`, `useInviteResident`,
+  `useInviteAdmin`, `useRevokeInvitation`) + `useAcceptInvitation` en `auth/api.ts`, con mapas de
+  etiquetas (tipo de invitación, rol de residente y de staff).
+
+### Tests
+
+- `AdminPropertyDetailPage`: invitar a un residente (`POST` con el body correcto) y listar + revocar
+  una invitación pendiente. `InviteAcceptPage`: canje OK con redirect por tipo (residente/co-admin),
+  token faltante e invitación inválida.
+
+### Notas
+
+- Colisión de operationId: `Accept` (POST /invitations/accept) **gana** la dedupe del OpenAPI → queda
+  bien tipado; `InviteResident`/`InviteAdmin` son únicos; `List` (GET /invitations) y `Revoke`
+  (DELETE) colisionan → cast acotado y comentado, como en `useMyClaims`.
+- Aún no hay gating de rol fino en el front: invitar co-admin es owner-only en el backend (responde
+  `403`, que se muestra con `friendlyMessage`).
+
 ## [0.10.0] - 2026-06-18
 
 **Panel admin — gestión de la propiedad** (M4): completa el detalle con edición, habilitar/deshabilitar
@@ -356,7 +389,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.7.0...v0.8.0

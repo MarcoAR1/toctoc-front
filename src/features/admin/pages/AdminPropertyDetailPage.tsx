@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { QRCodeSVG } from 'qrcode.react'
-import { ArrowLeft, Download, Link2, Pencil, Plus, Power, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Download, Link2, Mail, Pencil, Plus, Power, RefreshCw, Trash2 } from 'lucide-react'
 
 import { friendlyMessage } from '@/api/errors'
 import { Badge } from '@/components/ui/badge'
@@ -28,8 +28,23 @@ import {
   type Property,
   type Unit,
 } from '@/features/admin/properties'
+import {
+  ADMIN_ROLE_LABEL,
+  INVITATION_TYPE_LABEL,
+  MANAGEABLE_ADMIN_ROLES,
+  MEMBERSHIP_ROLE_LABEL,
+  useInvitations,
+  useInviteAdmin,
+  useInviteResident,
+  useRevokeInvitation,
+  type Invitation,
+  type ManageableAdminRole,
+  type MembershipRole,
+} from '@/features/admin/invitations'
 
 const VISIBILITIES = Object.keys(DIRECTORY_VISIBILITY_LABEL) as DirectoryVisibility[]
+const MEMBERSHIP_ROLES = Object.keys(MEMBERSHIP_ROLE_LABEL) as MembershipRole[]
+const EXPIRY_FMT = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' })
 const SELECT_CLASS =
   'border-input bg-background focus-visible:ring-ring/50 h-9 rounded-md border px-3 text-sm outline-none focus-visible:ring-[3px]'
 
@@ -415,6 +430,231 @@ function UnitsSection({ propertyId }: { propertyId: string }) {
   )
 }
 
+/** Fila de una invitación pendiente con su acción de revocar. */
+function InvitationRow({
+  invitation,
+  onRevoke,
+  revoking,
+}: {
+  invitation: Invitation
+  onRevoke: () => void
+  revoking: boolean
+}) {
+  const roleLabel =
+    invitation.type === 'unit_resident'
+      ? invitation.membershipRole && MEMBERSHIP_ROLE_LABEL[invitation.membershipRole]
+      : invitation.adminRole && ADMIN_ROLE_LABEL[invitation.adminRole]
+  return (
+    <div className="bg-card flex items-center justify-between gap-2 rounded-lg border p-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{invitation.email}</p>
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-xs">
+          <Badge variant="secondary">{INVITATION_TYPE_LABEL[invitation.type]}</Badge>
+          {roleLabel && <span>{roleLabel}</span>}
+          <span aria-hidden="true">·</span>
+          <span>Vence {EXPIRY_FMT.format(new Date(invitation.expiresAt))}</span>
+        </div>
+      </div>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label="Revocar invitación"
+        onClick={onRevoke}
+        disabled={revoking}
+      >
+        <Trash2 className="size-4" />
+      </Button>
+    </div>
+  )
+}
+
+/** Invitaciones por email: invitar residente (a una unidad) o co-admin, y listar/revocar pendientes. */
+function InvitationsSection({ property }: { property: Property }) {
+  const [inviting, setInviting] = useState(false)
+  const [mode, setMode] = useState<'resident' | 'admin'>('resident')
+  const [email, setEmail] = useState('')
+  const [unitId, setUnitId] = useState('')
+  const [residentRole, setResidentRole] = useState<MembershipRole>('tenant')
+  const [adminRole, setAdminRole] = useState<ManageableAdminRole>('manager')
+
+  const units = usePropertyUnits(property.id)
+  const unitList = units.data?.items ?? []
+  const invitations = useInvitations(property.id)
+  const inviteResident = useInviteResident(property.id)
+  const inviteAdmin = useInviteAdmin(property.id)
+  const revoke = useRevokeInvitation(property.id)
+
+  const effectiveUnitId = unitId || unitList[0]?.id || ''
+  const emailOk = /\S+@\S+/.test(email)
+  const canSubmit = emailOk && (mode === 'admin' || Boolean(effectiveUnitId))
+  const submitting = inviteResident.isPending || inviteAdmin.isPending
+  const pending = invitations.data ?? []
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (!canSubmit) return
+    try {
+      if (mode === 'resident') {
+        await inviteResident.mutateAsync({ unitId: effectiveUnitId, email: email.trim(), role: residentRole })
+      } else {
+        await inviteAdmin.mutateAsync({ email: email.trim(), role: adminRole })
+      }
+      toast.success('Invitación enviada')
+      setEmail('')
+      setInviting(false)
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  async function onRevoke(id: string) {
+    try {
+      await revoke.mutateAsync(id)
+      toast.success('Invitación revocada')
+    } catch (err) {
+      toast.error(friendlyMessage(err))
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">Invitaciones</h2>
+        {!inviting && (
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setInviting(true)}>
+            <Mail className="size-4" aria-hidden="true" />
+            Invitar
+          </Button>
+        )}
+      </div>
+
+      {inviting && (
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={onSubmit} className="flex flex-col gap-4">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">Tipo</span>
+                <select
+                  aria-label="Tipo de invitación"
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value as 'resident' | 'admin')}
+                  className={SELECT_CLASS}
+                >
+                  <option value="resident">Residente (a una unidad)</option>
+                  <option value="admin">Co-admin (de la propiedad)</option>
+                </select>
+              </label>
+
+              {mode === 'resident' ? (
+                <div className="flex gap-3">
+                  <label className="flex flex-1 flex-col gap-1.5">
+                    <span className="text-sm font-medium">Unidad</span>
+                    <select
+                      aria-label="Unidad"
+                      value={effectiveUnitId}
+                      onChange={(e) => setUnitId(e.target.value)}
+                      className={SELECT_CLASS}
+                      disabled={unitList.length === 0}
+                    >
+                      {unitList.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-1 flex-col gap-1.5">
+                    <span className="text-sm font-medium">Rol</span>
+                    <select
+                      aria-label="Rol"
+                      value={residentRole}
+                      onChange={(e) => setResidentRole(e.target.value as MembershipRole)}
+                      className={SELECT_CLASS}
+                    >
+                      {MEMBERSHIP_ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {MEMBERSHIP_ROLE_LABEL[r]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ) : (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium">Rol</span>
+                  <select
+                    aria-label="Rol"
+                    value={adminRole}
+                    onChange={(e) => setAdminRole(e.target.value as ManageableAdminRole)}
+                    className={SELECT_CLASS}
+                  >
+                    {MANAGEABLE_ADMIN_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {ADMIN_ROLE_LABEL[r]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="invite-email">Email</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vecino@example.com"
+                />
+              </div>
+
+              {mode === 'resident' && unitList.length === 0 && (
+                <p className="text-destructive text-sm">Cargá una unidad antes de invitar residentes.</p>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => setInviting(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={!canSubmit || submitting} className="gap-2">
+                  {submitting && <Spinner className="size-4" />}
+                  Enviar invitación
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {invitations.isPending ? (
+        <Skeleton className="h-16 w-full" />
+      ) : invitations.isError ? (
+        <p className="text-destructive text-sm" role="alert">
+          {friendlyMessage(invitations.error)}
+        </p>
+      ) : pending.length === 0 ? (
+        <Card>
+          <CardContent className="text-muted-foreground py-6 text-center text-sm">
+            No hay invitaciones pendientes.
+          </CardContent>
+        </Card>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {pending.map((inv) => (
+            <li key={inv.id}>
+              <InvitationRow
+                invitation={inv}
+                onRevoke={() => onRevoke(inv.id)}
+                revoking={revoke.isPending}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 /** Detalle de una propiedad: cabecera + unidades (alta incluida). */
 export function AdminPropertyDetailPage() {
   const { id } = useParams()
@@ -442,6 +682,7 @@ export function AdminPropertyDetailPage() {
           <PropertyOverview property={property.data} />
           <QrSection property={property.data} />
           <UnitsSection propertyId={property.data.id} />
+          <InvitationsSection property={property.data} />
         </>
       ) : null}
     </div>
