@@ -7,6 +7,31 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-06-19
+
+**Panel admin — bitácora por propiedad** (M4): timbres, accesos y llamadas de toda la propiedad en
+un solo lugar, para que el admin/conserje audite la actividad sin depender de cada unidad.
+
+### Added
+
+- **Bitácora del admin (#Activity)** — nueva página `/admin/activity` (entrada "Bitácora" en el
+  sidebar) con selector de propiedad y tres pestañas: **Timbres** (`GET /rings?propertyId=`),
+  **Accesos** (`GET /access?propertyId=`) y **Llamadas** (`GET /calls?propertyId=`), más reciente
+  primero. Hooks en `admin/activity.ts` (`useRingsLog` / `useAccessLog` / `useCallsLog`).
+- **Presentación compartida (`features/activity/log.tsx`)** — `ActivityTabs`, `ActivityPanel` y los
+  renders de timbre/acceso/llamada (con sus etiquetas y badges de estado), reutilizados por el
+  historial del residente y la bitácora del admin.
+
+### Changed
+
+- **Historial del residente** — `HistoryPage` ahora reutiliza la presentación compartida; se eliminó
+  la duplicación de mapas de etiquetas, fila y lista (misma UI, ~210 líneas menos).
+
+### Tests
+
+- `AdminActivityPage`: lista timbres por defecto y cambia de pestaña consultando por `propertyId`; el
+  selector de propiedad refiltra la bitácora; estado vacío sin propiedades.
+
 ## [0.15.0] - 2026-06-18
 
 **Panel admin — reclamos en vivo** (M4): el board y el hilo de reclamos se actualizan solos vía
@@ -498,7 +523,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.12.0...v0.13.0
