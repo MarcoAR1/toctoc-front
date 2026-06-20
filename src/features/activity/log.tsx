@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { UseQueryResult } from '@tanstack/react-query'
-import { BellRing, DoorOpen, Phone } from 'lucide-react'
+import { BellRing, DoorOpen, Link2, Phone } from 'lucide-react'
 
 import { friendlyMessage } from '@/api/errors'
 import type { components } from '@/api/schema'
@@ -20,7 +20,7 @@ export type ActivityTab = 'rings' | 'access' | 'calls'
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline'
 type StatusBadge = { label: string; variant: BadgeVariant }
 
-export const ACTIVITY_TABS: { id: ActivityTab; label: string }[] = [
+const ACTIVITY_TABS: { id: ActivityTab; label: string }[] = [
   { id: 'rings', label: 'Timbres' },
   { id: 'access', label: 'Accesos' },
   { id: 'calls', label: 'Llamadas' },
@@ -99,7 +99,7 @@ function Row({
   )
 }
 
-export function renderRing(ring: Ring): ReactNode {
+function renderRing(ring: Ring): ReactNode {
   return (
     <Row
       icon={<BellRing className="size-4" />}
@@ -110,7 +110,7 @@ export function renderRing(ring: Ring): ReactNode {
     />
   )
 }
-export function renderAccess(event: AccessEvent): ReactNode {
+function renderAccess(event: AccessEvent): ReactNode {
   return (
     <Row
       icon={<DoorOpen className="size-4" />}
@@ -121,7 +121,7 @@ export function renderAccess(event: AccessEvent): ReactNode {
     />
   )
 }
-export function renderCall(call: CallSession): ReactNode {
+function renderCall(call: CallSession): ReactNode {
   return (
     <Row
       icon={<Phone className="size-4" />}
@@ -207,6 +207,43 @@ function ActivityList<T>({
   )
 }
 
+/** Un timbre con su actividad vinculada: aperturas de puerta y llamadas con el mismo `ringId`. */
+function RingItem({ ring, access, calls }: { ring: Ring; access: AccessEvent[]; calls: CallSession[] }) {
+  const [open, setOpen] = useState(false)
+  const linkedAccess = access.filter((a) => a.ringId === ring.id)
+  const linkedCalls = calls.filter((c) => c.ringId === ring.id)
+  const linkedCount = linkedAccess.length + linkedCalls.length
+
+  return (
+    <div className="flex flex-col gap-1">
+      {renderRing(ring)}
+      {linkedCount > 0 && (
+        <div className="flex flex-col gap-1 pl-12">
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            className="text-muted-foreground hover:text-foreground flex w-fit items-center gap-1 text-xs"
+          >
+            <Link2 className="size-3" aria-hidden="true" />
+            {open ? 'Ocultar actividad vinculada' : `Actividad vinculada (${linkedCount})`}
+          </button>
+          {open && (
+            <ul className="flex flex-col gap-1">
+              {linkedAccess.map((a) => (
+                <li key={a.id}>{renderAccess(a)}</li>
+              ))}
+              {linkedCalls.map((c) => (
+                <li key={c.id}>{renderCall(c)}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Panel de la pestaña activa: elige la query y el render correspondientes. */
 export function ActivityPanel({
   tab,
@@ -219,9 +256,16 @@ export function ActivityPanel({
   access: UseQueryResult<AccessEvent[]>
   calls: UseQueryResult<CallSession[]>
 }) {
+  const accessData = access.data ?? []
+  const callsData = calls.data ?? []
   if (tab === 'rings') {
     return (
-      <ActivityList query={rings} empty="Sin timbres todavía." getKey={(r) => r.id} renderItem={renderRing} />
+      <ActivityList
+        query={rings}
+        empty="Sin timbres todavía."
+        getKey={(r) => r.id}
+        renderItem={(ring) => <RingItem ring={ring} access={accessData} calls={callsData} />}
+      />
     )
   }
   if (tab === 'access') {

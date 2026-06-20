@@ -7,6 +7,31 @@ y el proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-06-19
+
+**Bitácora — trazabilidad por timbre** (M4): cada timbre muestra qué pasó después (se abrió la
+puerta, hubo una llamada), enlazando los tres registros por `ringId`. Sirve en el panel admin y en
+el historial del residente.
+
+### Added
+
+- **Actividad vinculada (#Activity)** — en la pestaña **Timbres**, cada timbre con eventos asociados
+  (aperturas de puerta y llamadas con el mismo `ringId`) ofrece un botón "Actividad vinculada (N)"
+  que despliega esos accesos y llamadas debajo. Implementado en el componente compartido
+  `RingItem` de `features/activity/log.tsx`, así que aplica al historial del residente y a la
+  bitácora del admin sin código extra.
+
+### Changed
+
+- **`features/activity/log.tsx`** — los helpers de render (`renderRing` / `renderAccess` /
+  `renderCall`) y `ACTIVITY_TABS` pasaron a ser internos del módulo (sólo se exportan componentes y
+  tipos), eliminando los avisos de `react-refresh/only-export-components`.
+
+### Tests
+
+- `AdminActivityPage`: un timbre con un acceso y una llamada del mismo `ringId` muestra "Actividad
+  vinculada (2)" y, al expandir, lista la apertura de puerta y la llamada.
+
 ## [0.16.0] - 2026-06-19
 
 **Panel admin — bitácora por propiedad** (M4): timbres, accesos y llamadas de toda la propiedad en
@@ -523,7 +548,8 @@ Capacitor.
   Nexus con `.npmrc` local (gitignored) y `package-lock.json` con URLs públicas; `README` con
   arquitectura, estructura, guía de estilo y comandos.
 
-[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/MarcoAR1/toctoc-front/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/MarcoAR1/toctoc-front/compare/v0.13.0...v0.14.0

@@ -35,6 +35,7 @@ const ACCESS = {
   type: 'door',
   propertyId: 'p1',
   unitId: 'u1',
+  ringId: 'r1',
   openedBy: 'me',
   method: 'remote',
   result: 'opened',
@@ -48,6 +49,7 @@ const CALL = {
   initiatorKind: 'visitor',
   initiatorId: 'v',
   initiatorLabel: 'Visitante del 4B',
+  ringId: 'r1',
   status: 'ended',
   startedAt: '2026-06-10T10:02:00Z',
 }
@@ -129,5 +131,18 @@ describe('AdminActivityPage', () => {
     renderPage()
 
     expect(await screen.findByText(/no tenés propiedades para gestionar/i)).toBeInTheDocument()
+  })
+
+  it('vincula los accesos y llamadas a su timbre por ringId', async () => {
+    mockEndpoints()
+    const user = userEvent.setup()
+    renderPage()
+
+    // En la pestaña Timbres, el timbre muestra su actividad vinculada (1 acceso + 1 llamada).
+    const toggle = await screen.findByRole('button', { name: /actividad vinculada \(2\)/i })
+    await user.click(toggle)
+
+    expect(await screen.findByText('Puerta')).toBeInTheDocument()
+    expect(screen.getByText('Visitante del 4B')).toBeInTheDocument()
   })
 })
